@@ -5,6 +5,7 @@ from typing import Type
 import maps4fs as mfs
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from maps4fs.generator.settings import DEMSettings
 
 from maps4fsapi.components.models import MainSettingsPayload
 from maps4fsapi.config import api_key_auth, is_public
@@ -24,6 +25,12 @@ if os.path.exists(tasks_dir):
 def get_dem(payload: MainSettingsPayload):
     print(payload)
     task_id = str(uuid.uuid4())
+
+    if not payload.dem_settings:
+        payload.dem_settings = DEMSettings()
+
+    payload.dem_settings.water_depth = 20
+
     output = generate(task_id, payload, ["Background"], ["dem"])
 
     return FileResponse(
