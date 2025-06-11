@@ -1,5 +1,6 @@
 from typing import Literal
 
+from maps4fs.generator.settings import DEMSettings
 from pydantic import BaseModel
 
 
@@ -19,3 +20,4 @@ class MainSettingsPayload(BaseModel):
     lon: float
     size: int
     rotation: int = 0
+    dem_settings: DEMSettings | None = None

@@ -22,8 +22,9 @@ if os.path.exists(tasks_dir):
 
 @dem_router.post("/get_dem")
 def get_dem(payload: MainSettingsPayload):
+    print(payload)
     task_id = str(uuid.uuid4())
-    output = generate(task_id, payload, ["Background"])
+    output = generate(task_id, payload, ["Background"], ["dem"])
 
     return FileResponse(
         output,
@@ -32,7 +33,9 @@ def get_dem(payload: MainSettingsPayload):
     )
 
 
-def generate(task_id: str, payload: MainSettingsPayload, components: list[str]) -> str:
+def generate(
+    task_id: str, payload: MainSettingsPayload, components: list[str], assets: list[str]
+) -> str:
     game = mfs.Game.from_code(payload.game_code)
     game.set_components_by_names(components)
     dtm_provider = mfs.DTMProvider.get_provider_by_code(payload.dtm_code)
@@ -47,6 +50,7 @@ def generate(task_id: str, payload: MainSettingsPayload, components: list[str]) 
         payload.size,
         payload.rotation,
         map_directory=task_directory,
+        dem_settings=payload.dem_settings,
     )
     for _ in map.generate():
         pass
@@ -54,8 +58,9 @@ def generate(task_id: str, payload: MainSettingsPayload, components: list[str]) 
     outputs = []
     for component in components:
         active_component = map.get_component(component)
-        output = active_component.assets.get("dem")
-        outputs.append(output)
+        for asset in assets:
+            output = active_component.assets.get(asset)
+            outputs.append(output)
 
     if len(outputs) > 1:
         # TODO: Pack to archive.
