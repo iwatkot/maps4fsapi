@@ -1,3 +1,4 @@
 uvicorn
 fastapi
 maps4fs
+cachetools

@@ -20,3 +20,5 @@ history.json
 map_directory/
 local.env
 *.sqlite
+data/
+tasks/

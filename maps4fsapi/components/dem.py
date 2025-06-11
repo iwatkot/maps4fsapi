@@ -1,0 +1,68 @@
+import os
+import uuid
+from typing import Type
+
+import maps4fs as mfs
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+
+from maps4fsapi.components.models import MainSettingsPayload
+from maps4fsapi.config import api_key_auth, is_public
+
+dem_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
+
+tasks_dir = os.path.join(os.getcwd(), "tasks")
+# ! DEBUG
+import shutil
+
+if os.path.exists(tasks_dir):
+    shutil.rmtree(tasks_dir)
+# ! End of DEBUG
+
+
+@dem_router.post("/get_dem")
+def get_dem(payload: MainSettingsPayload):
+    task_id = str(uuid.uuid4())
+    output = generate(task_id, payload, ["Background"])
+
+    return FileResponse(
+        output,
+        media_type="application/octet-stream",
+        filename=os.path.basename(output),
+    )
+
+
+def generate(task_id: str, payload: MainSettingsPayload, components: list[str]) -> str:
+    game = mfs.Game.from_code(payload.game_code)
+    game.set_components_by_names(components)
+    dtm_provider = mfs.DTMProvider.get_provider_by_code(payload.dtm_code)
+    coordinates = (payload.lat, payload.lon)
+    task_directory = os.path.join(tasks_dir, task_id)
+    os.makedirs(task_directory, exist_ok=True)
+    map = mfs.Map(
+        game,
+        dtm_provider,
+        None,
+        coordinates,
+        payload.size,
+        payload.rotation,
+        map_directory=task_directory,
+    )
+    for _ in map.generate():
+        pass
+
+    outputs = []
+    for component in components:
+        active_component = map.get_component(component)
+        output = active_component.assets.get("dem")
+        outputs.append(output)
+
+    if len(outputs) > 1:
+        # TODO: Pack to archive.
+
+        output_path = "blabla.zip"
+
+    else:
+        output_path = outputs[0]
+
+    return output_path

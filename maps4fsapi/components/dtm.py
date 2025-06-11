@@ -2,9 +2,8 @@ import maps4fs as mfs
 from fastapi import APIRouter, Depends, HTTPException
 
 from maps4fsapi.components.models import DTMCodePayload, LatLonPayload
-from maps4fsapi.config import api_key_auth
+from maps4fsapi.config import api_key_auth, is_public
 
-is_public = False
 dtm_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
 
 
