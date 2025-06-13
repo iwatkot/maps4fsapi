@@ -4,3 +4,4 @@ maps4fs
 cachetools
 pylint
 mypy
+types-cachetools

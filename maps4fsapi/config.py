@@ -3,6 +3,7 @@
 import os
 import platform
 import shutil
+from typing import Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -53,7 +54,7 @@ def get_package_version(package_name: str) -> str:
 class Singleton(type):
     """A metaclass for creating singleton classes."""
 
-    _instances = {}
+    _instances: dict[Any, Any] = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:

@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from maps4fsapi.components.models import DEMSettingsPayload
 from maps4fsapi.config import api_key_auth, is_public
@@ -12,7 +12,7 @@ dem_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else []
 
 
 @dem_router.post("/get_dem")
-def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool]:
+def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool] | HTTPException:
     """Generate a DEM (Digital Elevation Model) based on the provided settings.
 
     Arguments:
@@ -23,6 +23,11 @@ def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool]:
     """
     task_id = str(uuid.uuid4())
 
+    if not payload.dem_settings:
+        return HTTPException(
+            status_code=400,
+            detail="DEM settings are required. Please provide valid DEM settings.",
+        )
     payload.dem_settings.water_depth = 20
 
     TasksQueue().add_task(
