@@ -1,6 +1,6 @@
 from typing import Literal
 
-from maps4fs.generator.settings import DEMSettings
+import maps4fs as mfs
 from pydantic import BaseModel
 
 
@@ -13,6 +13,10 @@ class DTMCodePayload(BaseModel):
     code: str
 
 
+class TaskIdPayload(BaseModel):
+    task_id: str
+
+
 class MainSettingsPayload(BaseModel):
     game_code: Literal["fs22", "fs25"]
     dtm_code: str
@@ -20,4 +24,4 @@ class MainSettingsPayload(BaseModel):
     lon: float
     size: int
     rotation: int = 0
-    dem_settings: DEMSettings | None = None
+    dem_settings: mfs.settings.DEMSettings | None = mfs.settings.DEMSettings()

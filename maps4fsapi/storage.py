@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from cachetools import TTLCache
 
-from maps4fsapi.config import STORAGE_MAX_SIZE, STORAGE_TTL
+from maps4fsapi.config import STORAGE_MAX_SIZE, STORAGE_TTL, Singleton
 
 
 class StorageEntry(NamedTuple):
@@ -36,7 +36,7 @@ class CleanableTTLCache(TTLCache):
         super().__delitem__(key)
 
 
-class Storage:
+class Storage(metaclass=Singleton):
     def __init__(self):
         self.cache = CleanableTTLCache(maxsize=STORAGE_MAX_SIZE, ttl=STORAGE_TTL)
 
@@ -56,3 +56,8 @@ class Storage:
 
     def pop_entry(self, key: str) -> StorageEntry | None:
         return self.cache.pop(key, None)
+
+    def remove_entry(self, key: str) -> None:
+        """Remove an entry from the storage."""
+        if key in self.cache:
+            self.pop_entry(key)
