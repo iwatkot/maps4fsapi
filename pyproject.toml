@@ -3,40 +3,31 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "maps4fs"
-version = "1.0.0"
-description = "Generate map templates for Farming Simulator from real places."
+name = "maps4fsapi"
+version = "0.0.1"
+description = "Api for maps4fs, a tool for creating maps for Farming Simulator games."
 authors = [{name = "iwatkot", email = "iwatkot@gmail.com"}]
-license = {text = "MIT License"}
+license = {text = "Apache License 2.0"}
 readme = "README.md"
 keywords = ["farmingsimulator", "fs", "farmingsimulator22", "farmingsimulator25", "fs22", "fs25"]
 classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache License 2.0",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "opencv-python",
-    "osmnx>=2.0.0",
-    "rasterio",
-    "geopy",
-    "trimesh",
-    "imageio",
-    "tifffile",
-    "pympler",
-    "pydantic",
-    "pygmdl",
-    "owslib",
-    "tqdm",
-    "scipy",
+    "uvicorn",
+    "fastapi",
+    "maps4fs",
+    "cachetools"
 ]
 
 [project.urls]
-Homepage = "https://github.com/iwatkot/maps4fs"
-Repository = "https://github.com/iwatkot/maps4fs"
+Homepage = "https://github.com/iwatkot/maps4fsapi"
+Repository = "https://github.com/iwatkot/maps4fsapi"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["maps4fs*"]
+include = ["maps4fsapi*"]
 exclude = ["dev*", "bot*", "*data", "*docker", "*webui", "*docs"]
