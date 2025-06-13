@@ -1,8 +1,10 @@
+"""This module provides functionality for managing tasks related to map generation."""
+
 import os
 import queue
 import threading
 import zipfile
-from typing import Type
+from typing import Callable, Type
 
 import maps4fs as mfs
 
@@ -12,12 +14,21 @@ from maps4fsapi.storage import Storage, StorageEntry
 
 
 class TasksQueue(metaclass=Singleton):
+    """A singleton class that manages a queue of tasks for map generation."""
+
     def __init__(self):
         self.tasks = queue.Queue()
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
-    def add_task(self, func, *args, **kwargs):
+    def add_task(self, func: Callable, *args, **kwargs):
+        """Adds a task to the queue.
+
+        Arguments:
+            func (Callable): The function to be executed as a task.
+            *args: Positional arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+        """
         self.tasks.put((func, args, kwargs))
 
     def _worker(self):
@@ -36,6 +47,14 @@ def task_generation(
     components: list[str],
     assets: list[str] | None = None,
 ) -> None:
+    """Generates a map based on the provided payload and saves the output.
+
+    Arguments:
+        task_id (str): Unique identifier for the task.
+        payload (MainSettingsPayload): The settings payload containing map generation parameters.
+        components (list[str]): List of components to be included in the map.
+        assets (list[str] | None): Optional list of specific assets to include in the output.
+    """
     try:
         success = True
         description = "Task completed successfully."
@@ -96,6 +115,12 @@ def task_generation(
 
 
 def files_to_archive(filepaths: list[str], archive_path: str) -> None:
+    """Creates a zip archive containing the specified files.
+
+    Arguments:
+        filepaths (list[str]): List of file paths to include in the archive.
+        archive_path (str): Path where the zip archive will be created.
+    """
     with zipfile.ZipFile(archive_path, "w") as archive:
         for filepath in filepaths:
             if os.path.isfile(filepath):

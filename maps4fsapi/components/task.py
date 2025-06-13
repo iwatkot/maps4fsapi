@@ -1,3 +1,5 @@
+"""Task management for DEM retrieval in FastAPI application."""
+
 import os
 
 from fastapi import APIRouter, BackgroundTasks, Depends
@@ -12,6 +14,16 @@ task_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [
 
 @task_router.post("/get")
 def get_dem(payload: TaskIdPayload, background_tasks: BackgroundTasks):
+    """Retrieve a DEM file based on the provided task ID.
+
+    Arguments:
+        payload (TaskIdPayload): The payload containing the task ID.
+        background_tasks (BackgroundTasks): Background tasks to handle cleanup after response.
+
+    Returns:
+        FileResponse: A response containing the DEM file if successful, or an error message.
+    """
+
     entry = Storage().get_entry(payload.task_id)
     if not entry:
         return {

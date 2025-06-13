@@ -1,3 +1,5 @@
+"""Main entry point for the Maps4FS API application."""
+
 from fastapi import FastAPI
 
 from maps4fsapi.components.dem import dem_router
@@ -16,4 +18,5 @@ app.include_router(task_router, prefix="/task")
 
 @app.get("/info/version")
 async def get_version():
+    """Endpoint to retrieve the version of the Maps4FS package."""
     return {"version": maps4fs_version}

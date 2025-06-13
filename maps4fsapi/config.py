@@ -1,5 +1,8 @@
+"""Configuration module for the Maps4FS API."""
+
 import os
 import platform
+import shutil
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -10,11 +13,10 @@ STORAGE_MAX_SIZE = 1000
 security = HTTPBearer()
 
 tasks_dir = os.path.join(os.getcwd(), "tasks")
-# ! DEBUG
-import shutil
 
+# ! DEBUG
 if os.path.exists(tasks_dir):
-    shutil.rmtree(tasks_dir)
+    shutil.rmtree(tasks_dir)  # TODO: Remove this line in production.
 # ! End of DEBUG
 
 is_public = False  # TODO: Change to correct check if API is public or not.
@@ -49,6 +51,8 @@ def get_package_version(package_name: str) -> str:
 
 
 class Singleton(type):
+    """A metaclass for creating singleton classes."""
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):

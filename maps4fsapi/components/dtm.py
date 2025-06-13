@@ -1,3 +1,5 @@
+"""DTM (Digital Terrain Model) API endpoints for Maps4FS."""
+
 import maps4fs as mfs
 from fastapi import APIRouter, Depends, HTTPException
 

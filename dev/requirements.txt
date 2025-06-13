@@ -2,3 +2,5 @@ uvicorn
 fastapi
 maps4fs
 cachetools
+pylint
+mypy
