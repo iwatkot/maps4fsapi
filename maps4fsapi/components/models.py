@@ -39,10 +39,16 @@ class MainSettingsPayload(BaseModel):
 class DEMSettingsPayload(MainSettingsPayload):
     """Payload model for DEM settings, extending MainSettingsPayload."""
 
-    dem_settings: mfs.settings.DEMSettings | None = mfs.settings.DEMSettings()
+    dem_settings: mfs.settings.DEMSettings = mfs.settings.DEMSettings()
 
 
 class BackgroundSettingsPayload(DEMSettingsPayload):
     """Payload model for Background settings, extending DEMSettingsPayload."""
 
-    background_settings: mfs.settings.BackgroundSettings | None = mfs.settings.BackgroundSettings()
+    background_settings: mfs.settings.BackgroundSettings = mfs.settings.BackgroundSettings()
+
+
+class GRLESettingsPayload(MainSettingsPayload):
+    """Payload model for GRLE settings, extending MainSettingsPayload."""
+
+    grle_settings: mfs.settings.GRLESettings = mfs.settings.GRLESettings()

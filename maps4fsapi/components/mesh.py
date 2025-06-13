@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
 from maps4fsapi.components.models import BackgroundSettingsPayload
 from maps4fsapi.config import api_key_auth, is_public
@@ -29,21 +29,14 @@ def generate_background(
 
     task_id = str(uuid.uuid4())
 
-    if not payload.background_settings:
-        return HTTPException(
-            status_code=400,
-            detail="Background settings are required. Please provide valid Background settings.",
-        )
-
     if endpoint.endswith("/water"):
         generate_water = True
         assets = ["water_mesh"]
     else:
         generate_water = False
         assets = ["background_mesh"]
-    generate_background = not generate_water
 
-    payload.background_settings.generate_background = generate_background
+    payload.background_settings.generate_background = not generate_water
     payload.background_settings.generate_water = generate_water
 
     # section DEBUG

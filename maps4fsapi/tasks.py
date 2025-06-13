@@ -95,7 +95,11 @@ def task_generation(
                 continue
             for asset in assets:
                 output = active_component.assets.get(asset)
-                outputs.append(output)
+                if output:
+                    outputs.append(output)
+
+        if not outputs:
+            raise ValueError("No outputs generated. Check the provided settings and components.")
 
         if len(outputs) > 1:
             output_path: str = os.path.join(task_directory, f"{task_id}.zip")

@@ -1,0 +1,49 @@
+"""Generate GRLE data for the given payload."""
+
+import uuid
+
+from fastapi import APIRouter, Depends, Request
+
+from maps4fsapi.components.models import GRLESettingsPayload
+from maps4fsapi.config import api_key_auth, is_public
+from maps4fsapi.tasks import TasksQueue, task_generation
+
+grle_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
+
+
+@grle_router.post("/plants")
+@grle_router.post("/farmlands")
+def generate_grle(
+    payload: GRLESettingsPayload,
+    request: Request,
+) -> dict[str, str | bool]:
+    """Generate a GRLE (Georeferenced Raster Layer) based on the provided settings.
+
+    Arguments:
+        payload (GRLESettingsPayload): The settings payload containing parameters for GRLE generation.
+
+    Returns:
+        dict: A dictionary containing the success status, description, and task ID.
+    """
+    endpoint = request.url.path
+
+    task_id = str(uuid.uuid4())
+
+    if endpoint.endswith("/plants"):
+        assets = ["plants"]
+    else:
+        assets = ["farmlands"]
+
+    TasksQueue().add_task(
+        task_generation,
+        task_id,
+        payload,
+        ["Texture", "GRLE"],
+        assets,
+    )
+
+    return {
+        "success": True,
+        "description": "Task has been added to the queue. Use the task ID to retrieve the result.",
+        "task_id": task_id,
+    }
