@@ -1,4 +1,5 @@
 import os
+import platform
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -29,6 +30,22 @@ def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key",
         )
+
+
+def get_package_version(package_name: str) -> str:
+    """Get the package version of a given package.
+
+    Returns:
+        str: The package version.
+    """
+    current_os = platform.system().lower()
+    if current_os == "windows":
+        command = f"pip list 2>NUL | findstr {package_name}"
+    else:
+        command = f"pip list 2>/dev/null | grep {package_name}"
+
+    response = os.popen(command).read()
+    return response.replace(package_name, "").strip()
 
 
 class Singleton(type):

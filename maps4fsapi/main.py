@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from maps4fsapi.components.dem import dem_router
 from maps4fsapi.components.dtm import dtm_router
 from maps4fsapi.components.task import task_router
+from maps4fsapi.config import get_package_version
+
+maps4fs_version = get_package_version("maps4fs")
 
 app = FastAPI()
 
@@ -11,6 +14,6 @@ app.include_router(dem_router, prefix="/dem")
 app.include_router(task_router, prefix="/task")
 
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Maps4FS API!"}
+@app.get("/info/version")
+async def get_version():
+    return {"version": maps4fs_version}
