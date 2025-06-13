@@ -1,5 +1,7 @@
 """Generate DEM data for the given payload."""
 
+import uuid
+
 from fastapi import APIRouter, Depends
 
 from maps4fsapi.components.models import DEMSettingsPayload
@@ -19,13 +21,10 @@ def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool]:
     Returns:
         dict: A dictionary containing the success status, description, and task ID.
     """
-    # task_id = str(uuid.uuid4())
-    task_id = "123"  # ! Debugging purpose only, remove in production
+    task_id = str(uuid.uuid4())
 
     payload.dem_settings.water_depth = 20
 
-    # 1. Add task to the queue.
-    # 2. Return the task ID to the user with a message.
     TasksQueue().add_task(
         task_generation,
         task_id,
