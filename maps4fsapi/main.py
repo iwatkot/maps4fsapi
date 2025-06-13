@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from maps4fsapi.components.dem import dem_router
 from maps4fsapi.components.dtm import dtm_router
+from maps4fsapi.components.mesh import mesh_router
 from maps4fsapi.components.task import task_router
 from maps4fsapi.config import get_package_version
 
@@ -13,6 +14,7 @@ app = FastAPI()
 
 app.include_router(dtm_router, prefix="/dtm")
 app.include_router(dem_router, prefix="/dem")
+app.include_router(mesh_router, prefix="/mesh")
 app.include_router(task_router, prefix="/task")
 
 

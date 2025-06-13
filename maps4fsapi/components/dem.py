@@ -12,7 +12,7 @@ dem_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else []
 
 
 @dem_router.post("/get_dem")
-def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool] | HTTPException:
+def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool]:
     """Generate a DEM (Digital Elevation Model) based on the provided settings.
 
     Arguments:
