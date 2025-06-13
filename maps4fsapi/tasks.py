@@ -9,7 +9,7 @@ from typing import Callable, Type
 import maps4fs as mfs
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import Singleton, tasks_dir
+from maps4fsapi.config import Singleton, archives_dir, tasks_dir
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -88,15 +88,17 @@ def task_generation(
             pass
 
         outputs = []
-        for component in components:
-            active_component = map.get_component(component)
-            if not assets:
-                outputs.extend(list(active_component.assets.values()))
-                continue
-            for asset in assets:
-                output = active_component.assets.get(asset)
-                if output:
-                    outputs.append(output)
+        if assets:
+            for component in components:
+                active_component = map.get_component(component)
+                for asset in assets:
+                    output = active_component.assets.get(asset)
+                    if output:
+                        outputs.append(output)
+        else:
+            archive_path = os.path.join(archives_dir, f"{task_id}.zip")
+            map.pack(archive_path.replace(".zip", ""))
+            outputs.append(archive_path)
 
         if not outputs:
             raise ValueError("No outputs generated. Check the provided settings and components.")

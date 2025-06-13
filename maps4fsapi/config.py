@@ -14,10 +14,14 @@ STORAGE_MAX_SIZE = 1000
 security = HTTPBearer()
 
 tasks_dir = os.path.join(os.getcwd(), "tasks")
+archives_dir = os.path.join(tasks_dir, "archives")
+os.makedirs(archives_dir, exist_ok=True)
 
 # ! DEBUG
 if os.path.exists(tasks_dir):
     shutil.rmtree(tasks_dir)  # TODO: Remove this line in production.
+if os.path.exists(archives_dir):
+    shutil.rmtree(archives_dir)  # TODO: Remove this line in production.
 # ! End of DEBUG
 
 is_public = False  # TODO: Change to correct check if API is public or not.
