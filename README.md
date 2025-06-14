@@ -73,7 +73,7 @@ The endpoints that support queuing are marked with a ✅ in the table below. You
 
 # Maps4FS API
 The Maps4FS API is a RESTful API that provides access to the Maps4FS functionality. It allows you to generate maps, retrieve information about the specific components of the maps, and perform other operations related to the Maps4FS project.  
-Source documentation for the Maps4FS API is available at [here](maps4fsapi/components/).
+Source documentation for the Maps4FS API is available [here](maps4fsapi/components/).
 
 ## Map Endpoints
 The Map component of the Maps4FS API is responsible for generating a complete map, not a single component of it. You can provide all the settings in one place and receive a `zip` archive containing all the generated files.
