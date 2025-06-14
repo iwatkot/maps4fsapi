@@ -21,8 +21,8 @@ class StorageEntry(NamedTuple):
 
     success: bool
     description: str
-    directory: str
-    file_path: str
+    directory: str | None = None
+    file_path: str | None = None
 
 
 class CleanableTTLCache(TTLCache):

@@ -59,6 +59,8 @@ def task_generation(
         assets (list[str] | None): Optional list of specific assets to include in the output.
         include_all (bool): If True, includes all components in the map generation.
     """
+    task_directory = None
+    output_path = None
     try:
         logger.debug("Starting task %s with payload: %s", task_id, payload)
         success = True
