@@ -1,16 +1,23 @@
 """DTM (Digital Terrain Model) API endpoints for Maps4FS."""
 
-import maps4fs as mfs
-from fastapi import APIRouter, HTTPException
+import uuid
 
-from maps4fsapi.components.models import DTMCodePayload, LatLonPayload
-from maps4fsapi.limits import dependencies
+import maps4fs as mfs
+from fastapi import APIRouter, HTTPException, Request
+
+from maps4fsapi.components.models import (
+    DEMSettingsPayload,
+    DTMCodePayload,
+    LatLonPayload,
+)
+from maps4fsapi.limits import dependencies, public_limiter
+from maps4fsapi.tasks import TasksQueue, task_generation
 
 dtm_router = APIRouter(dependencies=dependencies)
 
 
-@dtm_router.post("/get_list")
-def get_dtm_list(payload: LatLonPayload):
+@dtm_router.post("/list")
+def dtm_list(payload: LatLonPayload):
     """Get a list of available DTM providers based on latitude and longitude.
 
     Arguments:
@@ -22,8 +29,8 @@ def get_dtm_list(payload: LatLonPayload):
     return available_dtm
 
 
-@dtm_router.post("/get_info")
-def get_dtm_info(payload: DTMCodePayload):
+@dtm_router.post("/info")
+def dtm_info(payload: DTMCodePayload):
     """Get information about a DTM provider based on its code.
     If the code is correct, returns the description of the DTM provider. If not, raises a 404 error.
 
@@ -37,3 +44,33 @@ def get_dtm_info(payload: DTMCodePayload):
     if not dtm:
         raise HTTPException(status_code=404, detail="DTM provider with this code not found")
     return {"valid": True, "provider": dtm.description()}
+
+
+@dtm_router.post("/dem")
+@public_limiter("1/hour")
+def dtm_dem(payload: DEMSettingsPayload, request: Request) -> dict[str, str | bool]:
+    """Generate a DEM (Digital Elevation Model) based on the provided settings.
+
+    Arguments:
+        payload (DEMSettingsPayload): The settings payload containing parameters for DEM generation.
+
+    Returns:
+        dict: A dictionary containing the success status, description, and task ID.
+    """
+    task_id = str(uuid.uuid4())
+
+    payload.dem_settings.water_depth = 20
+
+    TasksQueue().add_task(
+        task_generation,
+        task_id,
+        payload,
+        ["Background"],
+        ["dem"],
+    )
+
+    return {
+        "success": True,
+        "description": "Task has been added to the queue. Use the task ID to retrieve the result.",
+        "task_id": task_id,
+    }

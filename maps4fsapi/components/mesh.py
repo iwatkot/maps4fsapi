@@ -13,7 +13,7 @@ mesh_router = APIRouter(dependencies=dependencies)
 
 @mesh_router.post("/background")
 @mesh_router.post("/water")
-def generate_background(
+def mesh_generation(
     payload: BackgroundSettingsPayload,
     request: Request,
 ) -> dict[str, str | bool]:

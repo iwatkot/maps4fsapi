@@ -13,7 +13,7 @@ grle_router = APIRouter(dependencies=dependencies)
 
 @grle_router.post("/plants")
 @grle_router.post("/farmlands")
-def generate_grle(
+def grle_generation(
     payload: GRLESettingsPayload,
     request: Request,
 ) -> dict[str, str | bool]:

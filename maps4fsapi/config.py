@@ -6,8 +6,14 @@ import shutil
 from typing import Any
 
 import maps4fs as mfs
+from dotenv import load_dotenv
 
 logger = mfs.Logger(level="DEBUG")
+
+local_env = os.path.join(os.getcwd(), "local.env")
+if os.path.isfile(local_env):
+    logger.info("Loading local environment variables from %s", local_env)
+    load_dotenv(local_env)
 
 STORAGE_TTL = 3600
 STORAGE_MAX_SIZE = 1000
@@ -35,9 +41,17 @@ if os.path.exists(archives_dir):
     shutil.rmtree(archives_dir)  # TODO: Remove this line in production.
 # ! End of DEBUG
 
+SECRET_SALT = os.getenv("SECRET_SALT")
+
 is_public = check_is_public()
 if is_public:
     logger.info("Running on a public server, will require API key and apply rate limiting.")
+    if not SECRET_SALT:
+        raise ValueError(
+            "SECRET_SALT environment variable is not set. Please set it to a secure value."
+        )
+    else:
+        logger.info("SECRET_SALT: %s", "*" * len(SECRET_SALT))
 else:
     logger.info("Running on a private server, no API key or rate limiting required.")
 

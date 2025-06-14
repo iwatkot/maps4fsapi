@@ -1,20 +1,27 @@
+import base64
+import hashlib
 from typing import Callable
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from slowapi import Limiter
 
-from maps4fsapi.config import is_public
+from maps4fsapi.config import SECRET_SALT, is_public, logger
 
 security = HTTPBearer()
 
 
 def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Dependency to check if the provided API key is valid.
+
+    Arguments:
+        credentials (HTTPAuthorizationCredentials): The credentials provided in the request.
+
+    Raises:
+        HTTPException: If the API key is invalid or missing.
     """
-    Dependency to check if the provided API key is valid.
-    """
-    # TODO: Remember to add actual API key validation logic here.
-    if credentials.scheme.lower() != "bearer" or credentials.credentials != "12345":
+    if credentials.scheme.lower() != "bearer" or not validate_api_key(credentials.credentials):
+        logger.warning("Invalid or missing API key: %s", credentials.credentials)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key",
@@ -22,8 +29,7 @@ def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 
 def get_bearer_token(request: Request) -> str:
-    """
-    Extract the Bearer token from the request headers.
+    """Extract the Bearer token from the request headers.
 
     Arguments:
         request (Request): The FastAPI request object.
@@ -69,3 +75,55 @@ def public_limiter(*args, **kwargs) -> Callable:
 
 limiter = Limiter(key_func=get_bearer_token)
 dependencies = [Depends(api_key_auth)] if is_public else []
+
+
+def decode_user_id(encoded: str) -> int:
+    """Decode the user ID from the encoded string.
+
+    Arguments:
+        encoded (str): The encoded user ID string.
+    Returns:
+        int: The decoded user ID.
+    """
+    padded = encoded + "=" * (-len(encoded) % 4)
+    return int(base64.urlsafe_b64decode(padded.encode()).decode())
+
+
+def validate_api_key(api_key: str) -> bool:
+    """Validate the API key.
+
+    Arguments:
+        api_key (str): The API key to validate.
+
+    Returns:
+        bool: True if the API key is valid, False otherwise.
+    """
+    if not api_key or not isinstance(api_key, str):
+        return False
+
+    logger.debug("Validating API key: %s", "*" * len(api_key))
+    try:
+        encoded_id, key_hash = api_key.split(".")
+        user_id = decode_user_id(encoded_id)
+        expected_hash = hashlib.sha256(f"{user_id}:{SECRET_SALT}".encode()).hexdigest()[:32]
+        return key_hash == expected_hash
+    except Exception:
+        logger.warning("Invalid API key format or decoding error.")
+        return False
+
+
+# section remove
+
+
+# def generate_api_key(user_id: int) -> str:
+#     encoded_id = encode_user_id(user_id)
+#     raw = f"{user_id}:{SECRET_SALT}"
+#     hashed = hashlib.sha256(raw.encode()).hexdigest()[:32]
+#     return f"{encoded_id}.{hashed}"
+
+
+# def encode_user_id(user_id: int) -> str:
+#     return base64.urlsafe_b64encode(str(user_id).encode()).decode().rstrip("=")
+
+
+# endsection remove

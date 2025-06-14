@@ -1,4 +1,4 @@
-"""Task management for DEM retrieval in FastAPI application."""
+"""Task management for data retrieval in FastAPI application."""
 
 import os
 
@@ -13,8 +13,8 @@ task_router = APIRouter(dependencies=dependencies)
 
 
 @task_router.post("/get")
-def get_dem(payload: TaskIdPayload, background_tasks: BackgroundTasks):
-    """Retrieve a DEM file based on the provided task ID.
+def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
+    """Retrieve a task result based on the provided task ID.
 
     Arguments:
         payload (TaskIdPayload): The payload containing the task ID.
