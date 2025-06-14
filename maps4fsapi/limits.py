@@ -10,6 +10,7 @@ from maps4fsapi.config import SECRET_SALT, is_public, logger
 
 security = HTTPBearer()
 DEFAULT_PUBLIC_LIMIT = "10/hour"
+HIGH_DEMAND_PUBLIC_LIMIT = "5/hour"
 
 
 def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)):

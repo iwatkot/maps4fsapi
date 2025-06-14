@@ -5,14 +5,14 @@ import uuid
 from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import MapGenerationPayload
-from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
+from maps4fsapi.limits import HIGH_DEMAND_PUBLIC_LIMIT, dependencies, public_limiter
 from maps4fsapi.tasks import TasksQueue, task_generation
 
 map_router = APIRouter(dependencies=dependencies)
 
 
 @map_router.post("/generate")
-@public_limiter(DEFAULT_PUBLIC_LIMIT)
+@public_limiter(HIGH_DEMAND_PUBLIC_LIMIT)
 def map_generation(
     payload: MapGenerationPayload,
     request: Request,
