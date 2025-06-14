@@ -2,13 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import GRLESettingsPayload
-from maps4fsapi.config import api_key_auth, is_public
+from maps4fsapi.limits import dependencies
 from maps4fsapi.tasks import TasksQueue, task_generation
 
-grle_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
+grle_router = APIRouter(dependencies=dependencies)
 
 
 @grle_router.post("/plants")

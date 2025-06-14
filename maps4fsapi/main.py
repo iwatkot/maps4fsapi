@@ -7,9 +7,7 @@ from maps4fsapi.components.dtm import dtm_router
 from maps4fsapi.components.grle import grle_router
 from maps4fsapi.components.mesh import mesh_router
 from maps4fsapi.components.task import task_router
-from maps4fsapi.config import get_package_version
-
-maps4fs_version = get_package_version("maps4fs")
+from maps4fsapi.config import package_version
 
 app = FastAPI()
 
@@ -23,4 +21,4 @@ app.include_router(task_router, prefix="/task")
 @app.get("/info/version")
 async def get_version():
     """Endpoint to retrieve the version of the Maps4FS package."""
-    return {"version": maps4fs_version}
+    return {"version": package_version}

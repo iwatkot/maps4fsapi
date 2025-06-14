@@ -2,17 +2,18 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import DEMSettingsPayload
-from maps4fsapi.config import api_key_auth, is_public
+from maps4fsapi.limits import dependencies, public_limiter
 from maps4fsapi.tasks import TasksQueue, task_generation
 
-dem_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
+dem_router = APIRouter(dependencies=dependencies)
 
 
 @dem_router.post("/get_dem")
-def get_dem(payload: DEMSettingsPayload) -> dict[str, str | bool]:
+@public_limiter("1/hour")
+def get_dem(payload: DEMSettingsPayload, request: Request) -> dict[str, str | bool]:
     """Generate a DEM (Digital Elevation Model) based on the provided settings.
 
     Arguments:

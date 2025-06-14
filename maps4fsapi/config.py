@@ -5,13 +5,24 @@ import platform
 import shutil
 from typing import Any
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import maps4fs as mfs
+
+logger = mfs.Logger(level="DEBUG")
 
 STORAGE_TTL = 3600
 STORAGE_MAX_SIZE = 1000
+PUBLIC_HOSTNAME_KEY = "PUBLIC_HOSTNAME"
+PUBLIC_HOSTNAME_VALUE = "maps4fs"
 
-security = HTTPBearer()
+
+def check_is_public() -> bool:
+    """Check if the script is running on a public server.
+
+    Returns:
+        bool: True if the script is running on a public server, False otherwise.
+    """
+    return os.environ.get(PUBLIC_HOSTNAME_KEY) == PUBLIC_HOSTNAME_VALUE
+
 
 tasks_dir = os.path.join(os.getcwd(), "tasks")
 archives_dir = os.path.join(tasks_dir, "archives")
@@ -24,19 +35,11 @@ if os.path.exists(archives_dir):
     shutil.rmtree(archives_dir)  # TODO: Remove this line in production.
 # ! End of DEBUG
 
-is_public = False  # TODO: Change to correct check if API is public or not.
-
-
-def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """
-    Dependency to check if the provided API key is valid.
-    """
-    # TODO: Remember to add actual API key validation logic here.
-    if credentials.scheme.lower() != "bearer" or credentials.credentials != "12345":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API key",
-        )
+is_public = check_is_public()
+if is_public:
+    logger.info("Running on a public server, will require API key and apply rate limiting.")
+else:
+    logger.info("Running on a private server, no API key or rate limiting required.")
 
 
 def get_package_version(package_name: str) -> str:
@@ -53,6 +56,10 @@ def get_package_version(package_name: str) -> str:
 
     response = os.popen(command).read()
     return response.replace(package_name, "").strip()
+
+
+package_version = get_package_version("maps4fs")
+logger.info("Maps4FS package version: %s", package_version)
 
 
 class Singleton(type):

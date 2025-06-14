@@ -5,3 +5,5 @@ cachetools
 pylint
 mypy
 types-cachetools
+slowapi
+python-dotenv

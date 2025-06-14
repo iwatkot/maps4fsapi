@@ -2,14 +2,14 @@
 
 import os
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import FileResponse
 
 from maps4fsapi.components.models import TaskIdPayload
-from maps4fsapi.config import api_key_auth, is_public
+from maps4fsapi.limits import dependencies
 from maps4fsapi.storage import Storage
 
-task_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
+task_router = APIRouter(dependencies=dependencies)
 
 
 @task_router.post("/get")

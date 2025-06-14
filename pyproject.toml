@@ -20,7 +20,9 @@ dependencies = [
     "uvicorn",
     "fastapi",
     "maps4fs",
-    "cachetools"
+    "cachetools",
+    "slowapi",
+    "python-dotenv",
 ]
 
 [project.urls]

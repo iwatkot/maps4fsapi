@@ -2,13 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import BackgroundSettingsPayload
-from maps4fsapi.config import api_key_auth, is_public
+from maps4fsapi.limits import dependencies
 from maps4fsapi.tasks import TasksQueue, task_generation
 
-mesh_router = APIRouter(dependencies=[Depends(api_key_auth)] if is_public else [])
+mesh_router = APIRouter(dependencies=dependencies)
 
 
 @mesh_router.post("/background")
