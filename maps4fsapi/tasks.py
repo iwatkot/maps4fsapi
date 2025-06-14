@@ -9,7 +9,7 @@ from typing import Callable, Type
 import maps4fs as mfs
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import Singleton, archives_dir, logger, tasks_dir
+from maps4fsapi.config import Singleton, archives_dir, is_public, logger, tasks_dir
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -81,7 +81,7 @@ def task_generation(
             if attr.endswith("_settings") and hasattr(payload, attr)
         }
 
-        map = mfs.Map(
+        mp = mfs.Map(
             game,
             dtm_provider,
             None,
@@ -91,13 +91,27 @@ def task_generation(
             map_directory=task_directory,
             **map_settings,
         )
-        for _ in map.generate():
+
+        if is_public:
+            logger.info("Running in public mode, will adjust map settings accordingly.")
+            adjust_settings_for_public(mp)
+
+            if mp.size > 4096:
+                logger.warning(
+                    "Map size %s is larger than 4096, will stop generation to prevent issues.",
+                    mp.size,
+                )
+                raise ValueError(
+                    "Map size exceeds the maximum allowed size for public access (4096)."
+                )
+
+        for _ in mp.generate():
             pass
 
         outputs = []
         if not include_all:
             for component in components:
-                active_component = map.get_component(component)
+                active_component = mp.get_component(component)
                 if not active_component:
                     logger.warning("Component %s not found in the map.", component)
                     continue
@@ -115,7 +129,7 @@ def task_generation(
         else:
             logger.debug("Working with a mode including all components.")
             archive_path = os.path.join(archives_dir, f"{task_id}.zip")
-            map.pack(archive_path.replace(".zip", ""))
+            mp.pack(archive_path.replace(".zip", ""))
             outputs.append(archive_path)
 
         logger.debug("Generated outputs: %s", outputs)
@@ -151,3 +165,20 @@ def files_to_archive(filepaths: list[str], archive_path: str) -> None:
         for filepath in filepaths:
             if os.path.isfile(filepath):
                 archive.write(filepath, arcname=os.path.basename(filepath))
+
+
+def adjust_settings_for_public(mp: mfs.Map) -> None:
+    """Adjusts the map settings for public access, modifying the map instance in place.
+
+    Arguments:
+        mp (mfs.Map): The map instance to adjust.
+    """
+    if mp.background_settings.resize_factor < 8:
+        mp.background_settings.resize_factor = 8
+
+    if mp.satellite_settings.zoom_level > 16:
+        mp.satellite_settings.zoom_level = 16
+
+    mp.texture_settings.dissolve = False
+
+    logger.debug("Adjusted map settings for public access.")
