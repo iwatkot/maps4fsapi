@@ -13,12 +13,12 @@
 - Farmlands (image) If no textures were created, create a new instance automatically
 - Plants (image) If no textures were created, create a new instance automatically
 
-I3D:
+✅ I3D:
 - Fields (XML part that can be injected to the map I3D file)
 - Trees (XML part that can be injected to the map I3D file)
 - Splines (separate I3D file) If no textures were created, create a new instance automatically
 
-Texture:
+✅ Texture:
 - Images by provided texture schema or default one (zip archive with images)
 
 Complete generation:

@@ -48,6 +48,7 @@ def task_generation(
     payload: Type[MainSettingsPayload],
     components: list[str],
     assets: list[str] | None = None,
+    include_all: bool = False,
 ) -> None:
     """Generates a map based on the provided payload and saves the output.
 
@@ -56,6 +57,7 @@ def task_generation(
         payload (MainSettingsPayload): The settings payload containing map generation parameters.
         components (list[str]): List of components to be included in the map.
         assets (list[str] | None): Optional list of specific assets to include in the output.
+        include_all (bool): If True, includes all components in the map generation.
     """
     try:
         logger.debug("Starting task %s with payload: %s", task_id, payload)
@@ -91,18 +93,25 @@ def task_generation(
             pass
 
         outputs = []
-        if assets:
+        if not include_all:
             for component in components:
                 active_component = map.get_component(component)
                 if not active_component:
                     logger.warning("Component %s not found in the map.", component)
                     continue
-                for asset in assets:
-                    output = active_component.assets.get(asset)
-                    if output:
-                        outputs.append(output)
+                if assets:
+                    for asset in assets:
+                        output = active_component.assets.get(asset)
+                        if output:
+                            outputs.append(output)
+                else:
+                    logger.debug(
+                        "No specific assets provided for component %s, generating all assets.",
+                        component,
+                    )
+                    outputs.extend(list(active_component.assets.values()))
         else:
-            logger.debug("No specific assets provided, generating all components.")
+            logger.debug("Working with a mode including all components.")
             archive_path = os.path.join(archives_dir, f"{task_id}.zip")
             map.pack(archive_path.replace(".zip", ""))
             outputs.append(archive_path)

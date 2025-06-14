@@ -7,6 +7,7 @@ from maps4fsapi.components.grle import grle_router
 from maps4fsapi.components.i3d import i3d_router
 from maps4fsapi.components.mesh import mesh_router
 from maps4fsapi.components.task import task_router
+from maps4fsapi.components.texture import texture_router
 from maps4fsapi.config import package_version
 
 app = FastAPI()
@@ -16,6 +17,7 @@ app.include_router(mesh_router, prefix="/mesh")
 app.include_router(grle_router, prefix="/grle")
 app.include_router(task_router, prefix="/task")
 app.include_router(i3d_router, prefix="/i3d")
+app.include_router(texture_router, prefix="/texture")
 
 
 @app.get("/info/version")

@@ -60,3 +60,10 @@ class I3DSettingsPayload(BackgroundSettingsPayload):
     i3d_settings: mfs.settings.I3DSettings = mfs.settings.I3DSettings()
     spline_settings: mfs.settings.SplineSettings = mfs.settings.SplineSettings()
     texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
+
+
+class TextureSettingsPayload(MainSettingsPayload):
+    """Payload model for Texture settings, extending MainSettingsPayload."""
+
+    texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
+    layer_names: list[str] = []
