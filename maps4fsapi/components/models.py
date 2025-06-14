@@ -67,3 +67,21 @@ class TextureSettingsPayload(MainSettingsPayload):
 
     texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
     layer_names: list[str] = []
+
+
+class SatelliteSettingsPayload(MainSettingsPayload):
+    """Payload model for Satellite settings, extending MainSettingsPayload."""
+
+    satellite_settings: mfs.settings.SatelliteSettings = mfs.settings.SatelliteSettings()
+
+
+class MapGenerationPayload(MainSettingsPayload):
+    """Payload model for Map generation settings, extending MainSettingsPayload."""
+
+    dem_settings: mfs.settings.DEMSettings = mfs.settings.DEMSettings()
+    background_settings: mfs.settings.BackgroundSettings = mfs.settings.BackgroundSettings()
+    grle_settings: mfs.settings.GRLESettings = mfs.settings.GRLESettings()
+    i3d_settings: mfs.settings.I3DSettings = mfs.settings.I3DSettings()
+    texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
+    spline_settings: mfs.settings.SplineSettings = mfs.settings.SplineSettings()
+    satellite_settings: mfs.settings.SatelliteSettings = mfs.settings.SatelliteSettings()

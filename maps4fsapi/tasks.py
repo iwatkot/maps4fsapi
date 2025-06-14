@@ -46,7 +46,7 @@ class TasksQueue(metaclass=Singleton):
 def task_generation(
     task_id: str,
     payload: Type[MainSettingsPayload],
-    components: list[str],
+    components: list[str] | None = None,
     assets: list[str] | None = None,
     include_all: bool = False,
 ) -> None:
@@ -67,7 +67,9 @@ def task_generation(
         if not isinstance(payload, MainSettingsPayload):
             raise TypeError("Payload must be an instance of MainSettingsPayload")
         game = mfs.Game.from_code(payload.game_code)
-        game.set_components_by_names(components)
+        if components:
+            logger.debug("Setting components for the game: %s", components)
+            game.set_components_by_names(components)
         dtm_provider = mfs.DTMProvider.get_provider_by_code(payload.dtm_code)
         coordinates = (payload.lat, payload.lon)
         task_directory: str = os.path.join(tasks_dir, task_id)
