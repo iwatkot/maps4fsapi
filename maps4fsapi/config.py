@@ -1,8 +1,8 @@
 """Configuration module for the Maps4FS API."""
 
 import os
-import platform
 import shutil
+import subprocess
 from typing import Any
 
 import maps4fs as mfs
@@ -55,19 +55,21 @@ else:
 
 
 def get_package_version(package_name: str) -> str:
-    """Get the package version of a given package.
-
-    Returns:
-        str: The package version.
-    """
-    current_os = platform.system().lower()
-    if current_os == "windows":
-        command = f"pip list 2>NUL | findstr {package_name}"
-    else:
-        command = f"pip list 2>/dev/null | grep {package_name}"
-
-    response = os.popen(command).read()
-    return response.replace(package_name, "").strip()
+    """Get the package version."""
+    try:
+        result = subprocess.run(
+            [os.sys.executable, "-m", "pip", "show", package_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+        for line in result.stdout.splitlines():
+            if line.startswith("Version:"):
+                return line.split(":", 1)[1].strip()
+        return ""
+    except Exception:
+        return ""
 
 
 package_version = get_package_version("maps4fs")
