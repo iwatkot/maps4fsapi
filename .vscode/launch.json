@@ -18,6 +18,18 @@
       "env": {
           "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
       }
-  }
+  },
+  {
+    "name": "Demo.py",
+    "type": "debugpy",
+    "request": "launch",
+    "program": "demo.py",
+    "console": "integratedTerminal",
+    "justMyCode": true,
+    "env": {
+        "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
+        "LOG_LEVEL": "DEBUG",
+    }
+},
   ]
 }

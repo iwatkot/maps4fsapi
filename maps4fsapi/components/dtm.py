@@ -59,8 +59,6 @@ def dtm_dem(payload: DEMSettingsPayload, request: Request) -> dict[str, str | bo
     """
     task_id = str(uuid.uuid4())
 
-    payload.dem_settings.water_depth = 20
-
     TasksQueue().add_task(
         task_generation,
         task_id,

@@ -1,25 +1,93 @@
-| Section   | Endpoint  | Component | Required payload                                               | Output                                      | Heavy (require queue) |
-|-----------|-----------|-----------|----------------------------------------------------------------|---------------------------------------------|-----------------------|
-| DTM       | /get_list | DTM       | lat, lon                                                       | list of DTM codes                           | ❌                    |
-| DTM       | /is_valid | DTM       | dtm_code                                                       | DTM description or error message            | ❌                    |
-| DEM       | /get_dem  | Background| lat, lon, map_size, rotation, output_size, dem_code            | dem image                                   | ✅                    |
-| Backround | /get_bg   | Background| lat, lon, map_size, rotation, output_size, dem_code            | background mesh                             | ✅                    |
-| Backround | /get_water| Background| lat, lon, map_size, rotation, output_size, dem_code            | water mesh (elevated)                       | ✅                    |
-| Backround | /get_water| Background| lat, lon, map_size, rotation, output_size, dem_code            | water mesh (plane)                          | ✅                    |
+<p align="center">
+<a href="https://github.com/iwatkot/maps4fs">maps4fs</a> •
+<a href="https://github.com/iwatkot/maps4fsui">maps4fs UI</a> •
+<a href="https://github.com/iwatkot/maps4fsapi">maps4fs API</a> •
+<a href="https://github.com/iwatkot/maps4fsstats">maps4fs Stats</a> •
+<a href="https://github.com/iwatkot/maps4fsbot">maps4fs Bot</a>
+</p>
 
+<div align="center" markdown>
 
+<img src="">
 
-✅ GRLE:
-- Farmlands (image) If no textures were created, create a new instance automatically
-- Plants (image) If no textures were created, create a new instance automatically
+<p align="center">
+    <a href="#maps4fs">Maps4FS</a> •
+    <a href="#overview">Overview</a> •
+    <a href="#public-and-private-apis">Public and Private APIs</a> •
+    <a href="#api-components">API Components</a><br>
+    <a href="#information-component">Information Component</a> •
+    <a href="#dtm-component">DTM Component</a> •
+</p>
+</div>
 
-✅ I3D:
-- Fields (XML part that can be injected to the map I3D file)
-- Trees (XML part that can be injected to the map I3D file)
-- Splines (separate I3D file) If no textures were created, create a new instance automatically
+# Maps4FS
 
-✅ Texture:
-- Images by provided texture schema or default one (zip archive with images)
+Maps4FS is a tool for automatic generation maps for Farming Simulator games using the real world data. More information can be found in the [main repository](https://github.com/iwatkot/maps4fs).  
 
-Complete generation:
-- Completely generated map (zip archive with all files) -> Disable on public API, only for private use
+This repository contains the source code for the Maps4FS API, based on the `fastapi` framework.
+
+# Overview
+
+This repository is a part of the Maps4FS project, which consists of several components: the main maps4fs Python library, the maps4fs UI, the maps4fs API, the maps4fs stats, and the maps4fs bot.
+
+Please, refer to the main repository for all the relevant information about the Maps4FS project, including the documentation.
+
+➡️ The example of using the Maps4FS API from the Python code can be found in the [demo.py](demo.py) file in the root directory of this repository.
+
+# Public and private APIs
+The public API is available at [https://api.maps4fs.xyz](https://api.maps4fs.xyz) and provides access to the Maps4FS functionality. It requires authentication via an API key, which can be obtained in the Maps4FS Discord server by asking the bot for an API key. The API key is required for all requests to the public API.  
+The public version of the API also has a rate limit, which can be changed at any time but for the moment is set to 10 requests per hour for the same API key.  
+<br>
+The private API will be automatically deployed in the Docker version of the Maps4FS and by default will be available at `http://localhost:8000`. It does not require an API key and does not have a rate limit.
+
+## Public API Authentication
+To authenticate with the public API, you need to include your API key as a bearer token in the `Authorization` header of your request.  
+Request example:
+```bash
+curl -X POST "http://localhost:8000/dtm/list" \
+  -H "Authorization: Bearer YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"lat": 10.0, "lon": 25.0}'
+```
+
+**NOTE:** The private API (which deployed locally) does not require an API key, so you can omit the `Authorization` header in your requests.
+
+# Queuing
+Some endpoints of the Maps4FS API will take a long time to process the request, in this case the API will validate the initial request and return a `task_id` that can be used later to retrieve the result of the request.
+The endpoints that support queuing are marked with a ✅ in the table below. You can use the `/tasks/get` endpoint to check the status of the task and retrieve the result when it is ready.
+
+# API Components
+The Maps4FS API is a RESTful API that provides access to the Maps4FS functionality. It allows you to generate maps, retrieve information about the specific components of the maps, and perform other operations related to the Maps4FS project.
+
+## Information Component
+The Information component of the Maps4FS API provides endpoints to retrieve information about the Maps4FS project.
+
+### Information Endpoints
+- GET: `/info/version`: Returns the version of the Maps4FS.
+
+## DTM Component
+The DTM (Digital Terrain Model) component of the Maps4FS API is responsible for generating and managing the terrain data for the maps. It provides endpoints to obtain information about available DTM providers and to generate the DEM (Digital Elevation Model) for a specific area.
+
+### DTM Endpoints
+
+| Method | Endpoint | Payload Model | Queuing |
+|--------|----------|---------------|--------|
+| POST   | `/dtm/list` | [LatLonPayload](maps4fsapi/components/models.py) | ❌ |
+| POST   | `/dtm/info` | [DTMCodePayload](maps4fsapi/components/models.py) | ❌ |
+| POST   | `/dtm/dem` | [DEMSettingsPayload](maps4fsapi/components/models.py) | ✅ |
+
+`/dtm/list`: Returns a list of available DTM providers for provide latitude and longitude.  
+`/dtm/info`: Returns information about a specific DTM provider by provided DTM Provider code.  
+`/dtm/dem`: Generates a DEM for a specific area defined by the provided payload.  
+
+## GRLE Component
+The GRLE component of the Maps4FS API is responsible for generating and managing the ground layer data for the maps, for example plants and farmlands.
+
+### GRLE Endpoints
+| Method | Endpoint | Payload Model | Queuing |
+|--------|----------|---------------|--------|
+| POST   | `/grle/plants` | [GRLESettingsPayload](maps4fsapi/components/models.py) | ✅ |
+| POST   | `/grle/farmlands` | [GRLESettingsPayload](maps4fsapi/components/models.py) | ✅ |
+
+`/grle/plants`: Generates a PNG file for the plants layer based on the provided settings.  
+`/grle/farmlands`: Generates a PNG file for the farmlands layer based on the provided settings.
