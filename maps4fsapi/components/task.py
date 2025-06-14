@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import FileResponse
 
 from maps4fsapi.components.models import TaskIdPayload
+from maps4fsapi.config import logger
 from maps4fsapi.limits import dependencies
 from maps4fsapi.storage import Storage
 
@@ -23,27 +24,33 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
     Returns:
         FileResponse: A response containing the DEM file if successful, or an error message.
     """
-
+    logger.info("Received request to get task with ID: %s", payload.task_id)
     entry = Storage().get_entry(payload.task_id)
     if not entry:
+        logger.warning("Task ID %s not found.", payload.task_id)
         return {
             "success": False,
-            "description": "Task ID not found or has expired.",
+            "description": "Task ID not found. It's expired or not finished yet.",
         }
 
     if not entry.success:
+        logger.warning("Task %s failed with error: %s", payload.task_id, entry.description)
         return {
             "success": False,
             "description": entry.description,
         }
 
     if not os.path.isfile(entry.file_path):
+        logger.warning(
+            "File at path %s not found for task ID %s.", entry.file_path, payload.task_id
+        )
         return {
             "success": False,
             "description": "File not found.",
         }
 
     background_tasks.add_task(Storage().remove_entry, payload.task_id)
+    logger.info("Returning file for task ID %s: %s", payload.task_id, entry.file_path)
 
     return FileResponse(
         entry.file_path,

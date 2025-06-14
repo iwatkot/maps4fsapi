@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import GRLESettingsPayload
-from maps4fsapi.limits import dependencies
+from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
 from maps4fsapi.tasks import TasksQueue, task_generation
 
 grle_router = APIRouter(dependencies=dependencies)
@@ -13,6 +13,7 @@ grle_router = APIRouter(dependencies=dependencies)
 
 @grle_router.post("/plants")
 @grle_router.post("/farmlands")
+@public_limiter(DEFAULT_PUBLIC_LIMIT)
 def grle_generation(
     payload: GRLESettingsPayload,
     request: Request,

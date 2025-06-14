@@ -10,7 +10,7 @@ from maps4fsapi.components.models import (
     DTMCodePayload,
     LatLonPayload,
 )
-from maps4fsapi.limits import dependencies, public_limiter
+from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
 from maps4fsapi.tasks import TasksQueue, task_generation
 
 dtm_router = APIRouter(dependencies=dependencies)
@@ -47,7 +47,7 @@ def dtm_info(payload: DTMCodePayload):
 
 
 @dtm_router.post("/dem")
-@public_limiter("1/hour")
+@public_limiter(DEFAULT_PUBLIC_LIMIT)
 def dtm_dem(payload: DEMSettingsPayload, request: Request) -> dict[str, str | bool]:
     """Generate a DEM (Digital Elevation Model) based on the provided settings.
 

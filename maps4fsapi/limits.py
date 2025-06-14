@@ -9,6 +9,7 @@ from slowapi import Limiter
 from maps4fsapi.config import SECRET_SALT, is_public, logger
 
 security = HTTPBearer()
+DEFAULT_PUBLIC_LIMIT = "10/hour"
 
 
 def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)):

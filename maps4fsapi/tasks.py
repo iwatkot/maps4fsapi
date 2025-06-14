@@ -9,7 +9,7 @@ from typing import Callable, Type
 import maps4fs as mfs
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import Singleton, archives_dir, tasks_dir
+from maps4fsapi.config import Singleton, archives_dir, logger, tasks_dir
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -29,6 +29,7 @@ class TasksQueue(metaclass=Singleton):
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
         """
+        logger.debug("Adding task to queue: %s", func.__name__)
         self.tasks.put((func, args, kwargs))
 
     def _worker(self):
@@ -36,8 +37,9 @@ class TasksQueue(metaclass=Singleton):
             func, args, kwargs = self.tasks.get()
             try:
                 func(*args, **kwargs)
+                logger.debug("Task completed: %s", func.__name__)
             except Exception as e:
-                print(f"Task failed: {e}")
+                logger.error("Task %s failed with error: %s", func.__name__, e)
             self.tasks.task_done()
 
 
@@ -56,6 +58,7 @@ def task_generation(
         assets (list[str] | None): Optional list of specific assets to include in the output.
     """
     try:
+        logger.debug("Starting task %s with payload: %s", task_id, payload)
         success = True
         description = "Task completed successfully."
 
@@ -109,9 +112,12 @@ def task_generation(
 
         else:
             output_path = outputs[0]
+
+        logger.info("Task %s completed successfully. Output saved to %s", task_id, output_path)
     except Exception as e:
         success = False
         description = f"Task failed with error: {e}"
+        logger.error("Task %s failed with error: %s", task_id, e)
 
     storage_entry = StorageEntry(
         success=success, description=description, directory=task_directory, file_path=output_path

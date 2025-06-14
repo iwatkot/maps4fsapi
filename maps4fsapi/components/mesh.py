@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import BackgroundSettingsPayload
-from maps4fsapi.limits import dependencies
+from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
 from maps4fsapi.tasks import TasksQueue, task_generation
 
 mesh_router = APIRouter(dependencies=dependencies)
@@ -13,6 +13,7 @@ mesh_router = APIRouter(dependencies=dependencies)
 
 @mesh_router.post("/background")
 @mesh_router.post("/water")
+@public_limiter(DEFAULT_PUBLIC_LIMIT)
 def mesh_generation(
     payload: BackgroundSettingsPayload,
     request: Request,

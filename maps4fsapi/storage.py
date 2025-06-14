@@ -6,7 +6,7 @@ from typing import NamedTuple
 
 from cachetools import TTLCache
 
-from maps4fsapi.config import STORAGE_MAX_SIZE, STORAGE_TTL, Singleton
+from maps4fsapi.config import STORAGE_MAX_SIZE, STORAGE_TTL, Singleton, logger
 
 
 class StorageEntry(NamedTuple):
@@ -51,6 +51,7 @@ class Storage(metaclass=Singleton):
             key (str): The unique key for the entry.
             entry (StorageEntry): The storage entry to be added.
         """
+        logger.debug("Adding entry to storage: %s", key)
         self.cache[key] = entry
 
     def create_entry(
@@ -79,6 +80,7 @@ class Storage(metaclass=Singleton):
         Returns:
             StorageEntry | None: The storage entry if found, otherwise None.
         """
+        logger.debug("Retrieving entry from storage: %s", key)
         return self.cache.get(key)
 
     def pop_entry(self, key: str) -> StorageEntry | None:
@@ -98,5 +100,6 @@ class Storage(metaclass=Singleton):
         Arguments:
             key (str): The unique key for the entry.
         """
+        logger.debug("Removing entry from storage: %s", key)
         if key in self.cache:
             self.pop_entry(key)
