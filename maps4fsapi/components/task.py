@@ -2,7 +2,7 @@
 
 import os
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 
 from maps4fsapi.components.models import TaskIdPayload
@@ -28,33 +28,33 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
     entry = Storage().get_entry(payload.task_id)
     if not entry:
         logger.warning("Task ID %s not found.", payload.task_id)
-        return {
-            "success": False,
-            "description": "Task ID not found. It's expired or not finished yet.",
-        }
+        return HTTPException(
+            status_code=404,
+            detail="Task ID not found. It's expired or not finished yet.",
+        )
 
     if not entry.success:
         logger.warning("Task %s failed with error: %s", payload.task_id, entry.description)
-        return {
-            "success": False,
-            "description": entry.description,
-        }
+        return HTTPException(
+            status_code=400,
+            detail=entry.description,
+        )
 
     if not entry.file_path:
         logger.warning("No file path found for task ID %s.", payload.task_id)
-        return {
-            "success": False,
-            "description": "No file path found for the task.",
-        }
+        return HTTPException(
+            status_code=404,
+            detail="No file path found for the task.",
+        )
 
     if not os.path.isfile(entry.file_path):
         logger.warning(
             "File at path %s not found for task ID %s.", entry.file_path, payload.task_id
         )
-        return {
-            "success": False,
-            "description": "File not found.",
-        }
+        return HTTPException(
+            status_code=404,
+            detail="File not found.",
+        )
 
     background_tasks.add_task(Storage().remove_entry, payload.task_id)
     logger.info("Returning file for task ID %s: %s", payload.task_id, entry.file_path)
