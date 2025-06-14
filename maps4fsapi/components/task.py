@@ -40,6 +40,13 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
             "description": entry.description,
         }
 
+    if not entry.file_path:
+        logger.warning("No file path found for task ID %s.", payload.task_id)
+        return {
+            "success": False,
+            "description": "No file path found for the task.",
+        }
+
     if not os.path.isfile(entry.file_path):
         logger.warning(
             "File at path %s not found for task ID %s.", entry.file_path, payload.task_id

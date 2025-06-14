@@ -74,7 +74,7 @@ def task_generation(
             game.set_components_by_names(components)
         dtm_provider = mfs.DTMProvider.get_provider_by_code(payload.dtm_code)
         coordinates = (payload.lat, payload.lon)
-        task_directory: str = os.path.join(tasks_dir, task_id)
+        task_directory = os.path.join(tasks_dir, task_id)
         os.makedirs(task_directory, exist_ok=True)
 
         map_settings = {
@@ -138,7 +138,7 @@ def task_generation(
         if not outputs:
             raise ValueError("No outputs generated. Check the provided settings and components.")
         if len(outputs) > 1:
-            output_path: str = os.path.join(task_directory, f"{task_id}.zip")
+            output_path = os.path.join(task_directory, f"{task_id}.zip")
             files_to_archive(outputs, output_path)
         else:
             output_path = outputs[0]
@@ -175,11 +175,8 @@ def adjust_settings_for_public(mp: mfs.Map) -> None:
     Arguments:
         mp (mfs.Map): The map instance to adjust.
     """
-    if mp.background_settings.resize_factor < 8:
-        mp.background_settings.resize_factor = 8
-
-    if mp.satellite_settings.zoom_level > 16:
-        mp.satellite_settings.zoom_level = 16
+    mp.background_settings.resize_factor = max(mp.background_settings.resize_factor, 8)
+    mp.satellite_settings.zoom_level = min(mp.satellite_settings.zoom_level, 16)
 
     mp.texture_settings.dissolve = False
 

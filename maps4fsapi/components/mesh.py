@@ -40,11 +40,6 @@ def mesh_generation(
     payload.background_settings.generate_background = not generate_water
     payload.background_settings.generate_water = generate_water
 
-    # section DEBUG
-    payload.background_settings.remove_center = False  # TODO: Remove this line in production.
-    # This does not work on MacOS, so we disable it for now.
-    # section END DEBUG
-
     TasksQueue().add_task(
         task_generation,
         task_id,

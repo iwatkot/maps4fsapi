@@ -30,4 +30,5 @@ disable=raw-checker-failed,
         import-outside-toplevel,
         too-many-branches,
         import-error,
-        signature-differs
+        signature-differs,
+        too-many-nested-blocks,

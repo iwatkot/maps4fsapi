@@ -1,3 +1,5 @@
+"""Rate limiting and API key validation for FastAPI endpoints."""
+
 import base64
 import hashlib
 from typing import Callable

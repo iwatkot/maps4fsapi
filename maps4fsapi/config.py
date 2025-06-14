@@ -32,14 +32,13 @@ def check_is_public() -> bool:
 
 tasks_dir = os.path.join(os.getcwd(), "tasks")
 archives_dir = os.path.join(tasks_dir, "archives")
-os.makedirs(archives_dir, exist_ok=True)
+directories = [tasks_dir, archives_dir]
+for directory in directories:
+    if os.path.exists(directory):
+        logger.info("Removing existing directory: %s", directory)
+        shutil.rmtree(directory)
 
-# ! DEBUG
-if os.path.exists(tasks_dir):
-    shutil.rmtree(tasks_dir)  # TODO: Remove this line in production.
-if os.path.exists(archives_dir):
-    shutil.rmtree(archives_dir)  # TODO: Remove this line in production.
-# ! End of DEBUG
+    os.makedirs(directory, exist_ok=True)
 
 SECRET_SALT = os.getenv("SECRET_SALT")
 
@@ -50,8 +49,7 @@ if is_public:
         raise ValueError(
             "SECRET_SALT environment variable is not set. Please set it to a secure value."
         )
-    else:
-        logger.info("SECRET_SALT: %s", "*" * len(SECRET_SALT))
+    logger.info("SECRET_SALT: %s", "*" * len(SECRET_SALT))
 else:
     logger.info("Running on a private server, no API key or rate limiting required.")
 
