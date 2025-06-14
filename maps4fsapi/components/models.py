@@ -52,3 +52,11 @@ class GRLESettingsPayload(MainSettingsPayload):
     """Payload model for GRLE settings, extending MainSettingsPayload."""
 
     grle_settings: mfs.settings.GRLESettings = mfs.settings.GRLESettings()
+
+
+class I3DSettingsPayload(BackgroundSettingsPayload):
+    """Payload model for I3D settings, extending BackgroundSettingsPayload."""
+
+    i3d_settings: mfs.settings.I3DSettings = mfs.settings.I3DSettings()
+    spline_settings: mfs.settings.SplineSettings = mfs.settings.SplineSettings()
+    texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()

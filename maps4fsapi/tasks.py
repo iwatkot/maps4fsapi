@@ -94,22 +94,25 @@ def task_generation(
         if assets:
             for component in components:
                 active_component = map.get_component(component)
+                if not active_component:
+                    logger.warning("Component %s not found in the map.", component)
+                    continue
                 for asset in assets:
                     output = active_component.assets.get(asset)
                     if output:
                         outputs.append(output)
         else:
+            logger.debug("No specific assets provided, generating all components.")
             archive_path = os.path.join(archives_dir, f"{task_id}.zip")
             map.pack(archive_path.replace(".zip", ""))
             outputs.append(archive_path)
 
+        logger.debug("Generated outputs: %s", outputs)
         if not outputs:
             raise ValueError("No outputs generated. Check the provided settings and components.")
-
         if len(outputs) > 1:
             output_path: str = os.path.join(task_directory, f"{task_id}.zip")
             files_to_archive(outputs, output_path)
-
         else:
             output_path = outputs[0]
 

@@ -9,7 +9,7 @@
 
 
 
-GRLE:
+✅ GRLE:
 - Farmlands (image) If no textures were created, create a new instance automatically
 - Plants (image) If no textures were created, create a new instance automatically
 
@@ -23,42 +23,3 @@ Texture:
 
 Complete generation:
 - Completely generated map (zip archive with all files) -> Disable on public API, only for private use
-
-
-
-```python
-import base64
-import hashlib
-
-SECRET_SALT = "your_secret_salt"
-
-def encode_user_id(user_id: int) -> str:
-    return base64.urlsafe_b64encode(str(user_id).encode()).decode().rstrip("=")
-
-def decode_user_id(encoded: str) -> int:
-    padded = encoded + "=" * (-len(encoded) % 4)
-    return int(base64.urlsafe_b64decode(padded.encode()).decode())
-
-def generate_api_key(user_id: int) -> str:
-    encoded_id = encode_user_id(user_id)
-    raw = f"{user_id}:{SECRET_SALT}"
-    hashed = hashlib.sha256(raw.encode()).hexdigest()[:32]
-    return f"{encoded_id}.{hashed}"
-
-def validate_api_key(api_key: str) -> bool:
-    try:
-        encoded_id, key_hash = api_key.split(".")
-        user_id = decode_user_id(encoded_id)
-        expected_hash = hashlib.sha256(f"{user_id}:{SECRET_SALT}".encode()).hexdigest()[:32]
-        return key_hash == expected_hash
-    except Exception:
-        return False
-
-# Example usage:
-api_key = generate_api_key(1234500)
-print(api_key)  # Looks like: MTIzNDUwMA.96fb3933295bb3cd45f9f2b4aca4f33b
-print(validate_api_key(api_key))  # True
-
-broken_api_key = api_key[:-1]
-print(validate_api_key(broken_api_key))
-```
