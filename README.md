@@ -8,7 +8,7 @@
 
 <div align="center" markdown>
 
-<img src="">
+<img src="https://github.com/iwatkot/maps4fsapi/releases/download/0.0.1/maps4fs-poster_dev4.png">
 
 <p align="center">
     <a href="#maps4fs">Maps4FS</a> •
