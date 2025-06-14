@@ -25,6 +25,14 @@
     <a href="#texture-endpoints">Texture Endpoints</a> •
     <a href="#satellite-endpoints">Satellite Endpoints</a>
 </p>
+
+[![Join Discord](https://img.shields.io/badge/join-discord-blue)](https://discord.gg/Sj5QKKyE42)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/iwatkot/maps4fsapi)](https://github.com/iwatkot/maps4fs/releases)
+[![GitHub issues](https://img.shields.io/github/issues/iwatkot/maps4fsapi)](https://github.com/iwatkot/maps4fsapi/issues)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+[![Build Status](https://github.com/iwatkot/maps4fsapi/actions/workflows/checks.yml/badge.svg)](https://github.com/iwatkot/maps4fsapi/actions)
+[![GitHub Repo stars](https://img.shields.io/github/stars/iwatkot/maps4fsapi)](https://github.com/iwatkot/maps4fsapi/stargazers)
+
 </div>
 
 # Maps4FS
