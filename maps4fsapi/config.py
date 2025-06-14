@@ -58,7 +58,7 @@ def get_package_version(package_name: str) -> str:
     """Get the package version."""
     try:
         result = subprocess.run(
-            [os.sys.executable, "-m", "pip", "show", package_name],
+            [os.sys.executable, "-m", "pip", "show", package_name],  # type: ignore
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
