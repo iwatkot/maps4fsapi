@@ -8,7 +8,9 @@ API_URL = "https://api.maps4fs.xyz"
 
 # The API token is required only on the public API (https://api.maps4fs.xyz).
 # If you're using local version (https://localhost:8000), you don't need it.
-BEARER_TOKEN = "MzkzNDI2ODkwMjg4OTIyNjI2.6874414c8412135c6b84ca454b83e56a"
+BEARER_TOKEN = "YOUR_API_TOKEN_HERE"
+# The API token can be obtained from the Maps4FS bot in the Discord server.
+# Open the api-keys channel and type /apikey to get your token.
 lat, lon = 45.285541402763336, 20.237452197282817
 map_size = 512
 game_code = "fs25"
