@@ -4,7 +4,11 @@ import requests
 
 # region Constants
 SLEEP_TIMER = 5
-API_URL = "http://localhost:8000"
+API_URL = "https://api.maps4fs.xyz"
+
+# The API token is required only on the public API (https://api.maps4fs.xyz).
+# If you're using local version (https://localhost:8000), you don't need it.
+BEARER_TOKEN = "MzkzNDI2ODkwMjg4OTIyNjI2.6874414c8412135c6b84ca454b83e56a"
 lat, lon = 45.285541402763336, 20.237452197282817
 map_size = 512
 game_code = "fs25"
@@ -34,7 +38,11 @@ version_info = requests.get(f"{API_URL}/info/version").json()
 print(f"API Version: {version_info['version']}")
 
 # 1️⃣ Get available DTM Providers for the given coordinates.
-dtm_providers = requests.post(f"{API_URL}/dtm/providers", json={"lat": lat, "lon": lon}).json()
+dtm_providers = requests.post(
+    f"{API_URL}/dtm/providers",
+    json={"lat": lat, "lon": lon},
+    headers={"Authorization": f"Bearer {BEARER_TOKEN}"},  # Example of using the API token.
+).json()
 print(f"Available DTM Providers: {dtm_providers}")
 
 # 2️⃣ Vaidate the DTM Provider code.
