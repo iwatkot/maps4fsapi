@@ -114,20 +114,3 @@ def validate_api_key(api_key: str) -> bool:
     except Exception:
         logger.warning("Invalid API key format or decoding error.")
         return False
-
-
-# section remove
-
-
-# def generate_api_key(user_id: int) -> str:
-#     encoded_id = encode_user_id(user_id)
-#     raw = f"{user_id}:{SECRET_SALT}"
-#     hashed = hashlib.sha256(raw.encode()).hexdigest()[:32]
-#     return f"{encoded_id}.{hashed}"
-
-
-# def encode_user_id(user_id: int) -> str:
-#     return base64.urlsafe_b64encode(str(user_id).encode()).decode().rstrip("=")
-
-
-# endsection remove
