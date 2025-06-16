@@ -92,6 +92,7 @@ def task_generation(
             payload.rotation,
             map_directory=task_directory,
             **map_settings,
+            api_request=True,
         )
 
         if is_public:
