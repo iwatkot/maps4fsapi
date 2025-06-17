@@ -16,6 +16,19 @@ map_size = 512
 game_code = "fs25"
 # endregion
 
+# region other tools
+# This section contains a couple of examples for different tools to make requests to the Maps4FS API.
+
+# curl example:
+# curl -X POST "https://api.maps4fs.xyz/dtm/list" -H "Content-Type: application/json" -d '{"lat": 45.285541402763336, "lon": 20.237452197282817}' -H "Authorization: Bearer YOUR_API_TOKEN_HERE"
+
+# httpie example:
+# http POST https://api.maps4fs.xyz/dtm/list lat=45.285541402763336 lon=20.237452197282817 "Authorization: Bearer YOUR_API_TOKEN_HERE"
+
+# powershell example:
+# Invoke-RestMethod -Uri "https://api.maps4fs.xyz/dtm/list" -Method Post -Body '{"lat": 45.285541402763336, "lon": 20.237452197282817}' -Headers @{Authorization = "Bearer YOUR_API_TOKEN_HERE"}
+
+# endregion
 
 # region Utility Functions
 
