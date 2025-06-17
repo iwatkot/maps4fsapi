@@ -58,7 +58,6 @@ class I3DSettingsPayload(BackgroundSettingsPayload):
     """Payload model for I3D settings, extending BackgroundSettingsPayload."""
 
     i3d_settings: mfs.settings.I3DSettings = mfs.settings.I3DSettings()
-    spline_settings: mfs.settings.SplineSettings = mfs.settings.SplineSettings()
     texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
 
 
@@ -83,5 +82,4 @@ class MapGenerationPayload(MainSettingsPayload):
     grle_settings: mfs.settings.GRLESettings = mfs.settings.GRLESettings()
     i3d_settings: mfs.settings.I3DSettings = mfs.settings.I3DSettings()
     texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
-    spline_settings: mfs.settings.SplineSettings = mfs.settings.SplineSettings()
     satellite_settings: mfs.settings.SatelliteSettings = mfs.settings.SatelliteSettings()
