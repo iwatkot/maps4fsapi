@@ -41,7 +41,7 @@ print(f"API Version: {version_info['version']}")
 
 # 1️⃣ Get available DTM Providers for the given coordinates.
 dtm_providers = requests.post(
-    f"{API_URL}/dtm/providers",
+    f"{API_URL}/dtm/list",
     json={"lat": lat, "lon": lon},
     headers={"Authorization": f"Bearer {BEARER_TOKEN}"},  # Example of using the API token.
 ).json()

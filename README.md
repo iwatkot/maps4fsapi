@@ -103,6 +103,8 @@ Those endpoints are used to obtain the data about the task previously created by
 
 `/task/get`: If the task completed successfully, it will return the requested data, otherwise it will return the error message with details about the error.
 
+If the response will have OK status, in most of the cases it will return a file object.
+
 ## DTM Endpoints
 The DTM (Digital Terrain Model) component of the Maps4FS API is responsible for generating and managing the terrain data for the maps. It provides endpoints to obtain information about available DTM providers and to generate the DEM (Digital Elevation Model) for a specific area.
 
@@ -113,7 +115,23 @@ The DTM (Digital Terrain Model) component of the Maps4FS API is responsible for 
 | POST   | `/dtm/dem` | [DEMSettingsPayload](maps4fsapi/components/models.py) | ✅ |
 
 `/dtm/list`: Returns a list of available DTM providers for provide latitude and longitude.  
+
+Response example:
+
+```json
+{"srtm30": "🌎 Global [30.0 m/px] SRTM 30 m"}
+```
+In this example the `srtm30` key is a DTM provider code, that can be used in other endpoints, and the value is a human-readable description of the DTM provider.
+
 `/dtm/info`: Returns information about a specific DTM provider by provided DTM Provider code.  
+
+Response example:
+
+```json
+{"valid": true, "provider": "🌎 Global [30.0 m/px] SRTM 30 m"}
+```
+If the provided DTM code was correct, the `valid` field will be `true`, otherwise it will be `false`. The `provider` field contains a human-readable description of the DTM provider.
+
 `/dtm/dem`: Generates a DEM for a specific area defined by the provided payload.  
 
 ## GRLE Endpoints
