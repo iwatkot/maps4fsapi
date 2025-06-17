@@ -71,9 +71,19 @@ curl -X POST "http://localhost:8000/dtm/list" \
 Some endpoints of the Maps4FS API will take a long time to process the request, in this case the API will validate the initial request and return a `task_id` that can be used later to retrieve the result of the request.
 The endpoints that support queuing are marked with a ✅ in the table below. You can use the `/tasks/get` endpoint to check the status of the task and retrieve the result when it is ready.
 
+Response example:
+```json
+{
+    "success": true,
+    "description": "Task has been added to the queue. Use the task ID to retrieve the result.",
+    "task_id": "1234567890abcdef1234567890abcdef"
+}
+```
+
 # Maps4FS API
 The Maps4FS API is a RESTful API that provides access to the Maps4FS functionality. It allows you to generate maps, retrieve information about the specific components of the maps, and perform other operations related to the Maps4FS project.  
-Source documentation for the Maps4FS API is available [here](maps4fsapi/components/).
+Source documentation for the Maps4FS API is available [here](maps4fsapi/components/).  
+Pydantic models from the main `maps4fs` library can be found [here](https://github.com/iwatkot/maps4fs/blob/main/maps4fs/generator/settings.py).
 
 ## Map Endpoints
 The Map component of the Maps4FS API is responsible for generating a complete map, not a single component of it. You can provide all the settings in one place and receive a `zip` archive containing all the generated files.

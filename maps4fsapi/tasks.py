@@ -73,6 +73,10 @@ def task_generation(
             logger.debug("Setting components for the game: %s", components)
             game.set_components_by_names(components)
         dtm_provider = mfs.DTMProvider.get_provider_by_code(payload.dtm_code)
+
+        if not dtm_provider:
+            raise ValueError(f"DTM provider with code {payload.dtm_code} not found.")
+
         coordinates = (payload.lat, payload.lon)
         task_directory = os.path.join(tasks_dir, task_id)
         os.makedirs(task_directory, exist_ok=True)
