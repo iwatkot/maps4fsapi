@@ -20,7 +20,8 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
     Arguments:
         payload (TaskIdPayload): The payload containing the task ID.
         background_tasks (BackgroundTasks): Background tasks to handle cleanup after response.
-
+    Raises:
+        HTTPException: If the task ID is not found, the task failed, or the file is not available.
     Returns:
         FileResponse: A response containing the DEM file if successful, or an error message.
     """
@@ -28,21 +29,21 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
     entry = Storage().get_entry(payload.task_id)
     if not entry:
         logger.warning("Task ID %s not found.", payload.task_id)
-        return HTTPException(
+        raise HTTPException(
             status_code=404,
             detail="Task ID not found. It's expired or not finished yet.",
         )
 
     if not entry.success:
         logger.warning("Task %s failed with error: %s", payload.task_id, entry.description)
-        return HTTPException(
+        raise HTTPException(
             status_code=400,
             detail=entry.description,
         )
 
     if not entry.file_path:
         logger.warning("No file path found for task ID %s.", payload.task_id)
-        return HTTPException(
+        raise HTTPException(
             status_code=404,
             detail="No file path found for the task.",
         )
@@ -51,7 +52,7 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
         logger.warning(
             "File at path %s not found for task ID %s.", entry.file_path, payload.task_id
         )
-        return HTTPException(
+        raise HTTPException(
             status_code=404,
             detail="File not found.",
         )
