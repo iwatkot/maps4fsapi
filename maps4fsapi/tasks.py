@@ -40,6 +40,7 @@ class TasksQueue(metaclass=Singleton):
                 logger.debug("Task completed: %s", func.__name__)
             except Exception as e:
                 logger.error("Task %s failed with error: %s", func.__name__, e)
+                raise e
             self.tasks.task_done()
 
 
@@ -81,11 +82,19 @@ def task_generation(
         task_directory = os.path.join(tasks_dir, task_id)
         os.makedirs(task_directory, exist_ok=True)
 
-        generation_settings_json = {
+        prepared_settings = {
             attr: getattr(payload, attr)
             for attr in dir(payload)
             if attr.endswith("_settings") and hasattr(payload, attr)
         }
+        generation_settings_json = {}
+        for key, value in prepared_settings.items():
+            if isinstance(value, mfs.settings.SettingsModel):
+                new_value = value.model_dump()
+            elif isinstance(value, dict):
+                new_value = value
+            generation_settings_json[key] = new_value
+
         generation_settings = mfs.GenerationSettings.from_json(
             generation_settings_json, from_snake=True, safe=True
         )
@@ -156,6 +165,7 @@ def task_generation(
         success = False
         description = f"Task failed with error: {e}"
         logger.error("Task %s failed with error: %s", task_id, e)
+        raise e
 
     storage_entry = StorageEntry(
         success=success, description=description, directory=task_directory, file_path=output_path
@@ -183,9 +193,7 @@ def adjust_settings_for_public(mp: mfs.Map) -> None:
     Arguments:
         mp (mfs.Map): The map instance to adjust.
     """
-    mp.background_settings.resize_factor = max(mp.background_settings.resize_factor, 8)
     mp.satellite_settings.zoom_level = min(mp.satellite_settings.zoom_level, 16)
-
     mp.texture_settings.dissolve = False
 
     logger.debug("Adjusted map settings for public access.")
