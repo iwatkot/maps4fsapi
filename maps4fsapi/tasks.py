@@ -81,11 +81,14 @@ def task_generation(
         task_directory = os.path.join(tasks_dir, task_id)
         os.makedirs(task_directory, exist_ok=True)
 
-        map_settings = {
+        generation_settings_json = {
             attr: getattr(payload, attr)
             for attr in dir(payload)
             if attr.endswith("_settings") and hasattr(payload, attr)
         }
+        generation_settings = mfs.GenerationSettings.from_json(
+            generation_settings_json, from_snake=True, safe=True
+        )
 
         mp = mfs.Map(
             game,
@@ -95,7 +98,7 @@ def task_generation(
             payload.size,
             payload.rotation,
             map_directory=task_directory,
-            **map_settings,
+            generation_settings=generation_settings,
             api_request=True,
         )
 
