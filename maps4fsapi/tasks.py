@@ -7,9 +7,10 @@ import zipfile
 from typing import Callable, Type
 
 import maps4fs as mfs
+import maps4fs.generator.config as mfscfg
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import Singleton, archives_dir, is_public, logger, tasks_dir
+from maps4fsapi.config import Singleton, is_public, logger
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -44,8 +45,33 @@ class TasksQueue(metaclass=Singleton):
             self.tasks.task_done()
 
 
+def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
+    """Generates a session name based on the coordinates and game code.
+
+    Arguments:
+        coordinates (tuple[float, float]): The latitude and longitude coordinates.
+        game_code (str): The game code.
+
+    Returns:
+        str: The generated session name.
+    """
+    return mfs.Map.suggest_directory_name(coordinates, game_code)
+
+
+def get_session_name_from_payload(payload: Type[MainSettingsPayload]) -> str:
+    """Generates a session name based on the payload.
+
+    Arguments:
+        payload (Type[MainSettingsPayload]): The settings payload containing map generation parameters.
+
+    Returns:
+        str: The generated session name.
+    """
+    return get_session_name((payload.lat, payload.lon), payload.game_code)
+
+
 def task_generation(
-    task_id: str,
+    session_name: str,
     payload: Type[MainSettingsPayload],
     components: list[str] | None = None,
     assets: list[str] | None = None,
@@ -54,7 +80,7 @@ def task_generation(
     """Generates a map based on the provided payload and saves the output.
 
     Arguments:
-        task_id (str): Unique identifier for the task.
+        session_name (str): Unique identifier for the task.
         payload (MainSettingsPayload): The settings payload containing map generation parameters.
         components (list[str]): List of components to be included in the map.
         assets (list[str] | None): Optional list of specific assets to include in the output.
@@ -63,7 +89,7 @@ def task_generation(
     task_directory = None
     output_path = None
     try:
-        logger.debug("Starting task %s with payload: %s", task_id, payload)
+        logger.debug("Starting task %s with payload: %s", session_name, payload)
         success = True
         description = "Task completed successfully."
 
@@ -79,7 +105,7 @@ def task_generation(
             raise ValueError(f"DTM provider with code {payload.dtm_code} not found.")
 
         coordinates = (payload.lat, payload.lon)
-        task_directory = os.path.join(tasks_dir, task_id)
+        task_directory = os.path.join(mfscfg.MFS_DATA_DIR, session_name)
         os.makedirs(task_directory, exist_ok=True)
 
         prepared_settings = {
@@ -147,31 +173,31 @@ def task_generation(
                     outputs.extend(list(active_component.assets.values()))
         else:
             logger.debug("Working with a mode including all components.")
-            archive_path = os.path.join(archives_dir, f"{task_id}.zip")
-            mp.pack(archive_path.replace(".zip", ""))
+            archive_path = os.path.join(mfscfg.MFS_DATA_DIR, f"{session_name}.zip")
+            mp.pack(archive_path.replace(".zip", ""), remove_source=False)
             outputs.append(archive_path)
 
         logger.debug("Generated outputs: %s", outputs)
         if not outputs:
             raise ValueError("No outputs generated. Check the provided settings and components.")
         if len(outputs) > 1:
-            output_path = os.path.join(task_directory, f"{task_id}.zip")
+            output_path = os.path.join(task_directory, f"{session_name}.zip")
             files_to_archive(outputs, output_path)
         else:
             output_path = outputs[0]
 
-        logger.info("Task %s completed successfully. Output saved to %s", task_id, output_path)
+        logger.info("Task %s completed successfully. Output saved to %s", session_name, output_path)
     except Exception as e:
         success = False
         description = f"Task failed with error: {e}"
-        logger.error("Task %s failed with error: %s", task_id, e)
+        logger.error("Task %s failed with error: %s", session_name, e)
         raise e
 
     storage_entry = StorageEntry(
         success=success, description=description, directory=task_directory, file_path=output_path
     )
 
-    Storage().add_entry(task_id, storage_entry)
+    Storage().add_entry(session_name, storage_entry)
 
 
 def files_to_archive(filepaths: list[str], archive_path: str) -> None:

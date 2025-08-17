@@ -1,12 +1,10 @@
 """Generate GRLE data for the given payload."""
 
-import uuid
-
 from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import TextureSettingsPayload
 from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
-from maps4fsapi.tasks import TasksQueue, task_generation
+from maps4fsapi.tasks import TasksQueue, get_session_name_from_payload, task_generation
 
 texture_router = APIRouter(dependencies=dependencies)
 
@@ -25,7 +23,7 @@ def texture_generation(
     Returns:
         dict: A dictionary containing the success status, description, and task ID.
     """
-    task_id = str(uuid.uuid4())
+    task_id = get_session_name_from_payload(payload)
 
     assets = None
     if payload.layer_names:

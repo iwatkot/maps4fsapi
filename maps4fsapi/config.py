@@ -1,7 +1,6 @@
 """Configuration module for the Maps4FS API."""
 
 import os
-import shutil
 import subprocess
 from typing import Any
 
@@ -29,16 +28,6 @@ def check_is_public() -> bool:
     """
     return os.environ.get(PUBLIC_HOSTNAME_KEY) == PUBLIC_HOSTNAME_VALUE
 
-
-tasks_dir = os.path.join(os.getcwd(), "tasks")
-archives_dir = os.path.join(tasks_dir, "archives")
-directories = [tasks_dir, archives_dir]
-for directory in directories:
-    if os.path.exists(directory):
-        logger.info("Removing existing directory: %s", directory)
-        shutil.rmtree(directory)
-
-    os.makedirs(directory, exist_ok=True)
 
 SECRET_SALT = os.getenv("SECRET_SALT")
 
