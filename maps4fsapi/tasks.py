@@ -4,7 +4,7 @@ import os
 import queue
 import threading
 import zipfile
-from typing import Callable, Type
+from typing import Callable
 
 import maps4fs as mfs
 import maps4fs.generator.config as mfscfg
@@ -58,11 +58,11 @@ def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
     return mfs.Map.suggest_directory_name(coordinates, game_code)
 
 
-def get_session_name_from_payload(payload: Type[MainSettingsPayload]) -> str:
+def get_session_name_from_payload(payload: MainSettingsPayload) -> str:
     """Generates a session name based on the payload.
 
     Arguments:
-        payload (Type[MainSettingsPayload]): The settings payload containing map generation parameters.
+        payload (MainSettingsPayload): The settings payload containing map generation parameters.
 
     Returns:
         str: The generated session name.
@@ -72,7 +72,7 @@ def get_session_name_from_payload(payload: Type[MainSettingsPayload]) -> str:
 
 def task_generation(
     session_name: str,
-    payload: Type[MainSettingsPayload],
+    payload: MainSettingsPayload,
     components: list[str] | None = None,
     assets: list[str] | None = None,
     include_all: bool = False,
@@ -119,6 +119,8 @@ def task_generation(
                 new_value = value.model_dump()
             elif isinstance(value, dict):
                 new_value = value
+            else:
+                continue
             generation_settings_json[key] = new_value
 
         generation_settings = mfs.GenerationSettings.from_json(
@@ -154,7 +156,7 @@ def task_generation(
             pass
 
         outputs = []
-        if not include_all:
+        if not include_all and components:
             for component in components:
                 active_component = mp.get_component(component)
                 if not active_component:
