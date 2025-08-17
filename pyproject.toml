@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "maps4fsapi"
-version = "0.0.1"
+version = "0.0.2"
 description = "Api for maps4fs, a tool for creating maps for Farming Simulator games."
 authors = [{name = "iwatkot", email = "iwatkot@gmail.com"}]
 license = {text = "Apache License 2.0"}
