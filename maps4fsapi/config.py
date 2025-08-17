@@ -53,6 +53,10 @@ if is_public:
 else:
     logger.info("Running on a private server, no API key or rate limiting required.")
 
+FRONTEND_API_KEY = os.getenv("FRONTEND_API_KEY")
+if FRONTEND_API_KEY:
+    logger.info("FRONTEND_API_KEY: %s", "*" * len(FRONTEND_API_KEY))
+
 
 def get_package_version(package_name: str) -> str:
     """Get the package version."""
