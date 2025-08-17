@@ -1,7 +1,5 @@
 """Storage management module for maps4fsapi."""
 
-import os
-import shutil
 from typing import NamedTuple
 
 from cachetools import TTLCache
@@ -25,24 +23,11 @@ class StorageEntry(NamedTuple):
     file_path: str | None = None
 
 
-class CleanableTTLCache(TTLCache):
-    """A TTLCache that will remove related directory when the entry is removed."""
-
-    def __delitem__(self, key) -> None:
-        """Remove the related directory when the entry is deleted."""
-        entry = self.get(key)
-        if entry and entry.directory:
-            entry_directory = entry.directory
-            if os.path.isdir(entry_directory):
-                shutil.rmtree(entry_directory, ignore_errors=True)
-        super().__delitem__(key)
-
-
 class Storage(metaclass=Singleton):
     """A singleton class that manages storage of assets with a TTL cache."""
 
     def __init__(self):
-        self.cache = CleanableTTLCache(maxsize=STORAGE_MAX_SIZE, ttl=STORAGE_TTL)
+        self.cache = TTLCache(maxsize=STORAGE_MAX_SIZE, ttl=STORAGE_TTL)
 
     def add_entry(self, key: str, entry: StorageEntry) -> None:
         """Add an entry to the storage cache.
