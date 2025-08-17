@@ -36,7 +36,7 @@ Write-Header "MAPS4FS API CLEANUP SCRIPT"
 Write-Host "Starting cleanup process..." -ForegroundColor White
 
 # Directories to be removed
-$dirs = @(".mypy_cache", ".pytest_cache", "htmlcov", "dist", "archives", "cache", "logs", "maps", "temp", "osmps", "map_directory", "tests/data")
+$dirs = @(".mypy_cache", ".pytest_cache", "htmlcov", "dist", "archives", "cache", "logs", "maps", "temp", "osmps", "map_directory", "tests/data", "mfsrootdir")
 
 # Files to be removed
 $files = @(".coverage", "queue.json")
