@@ -7,3 +7,4 @@ mypy
 types-cachetools
 slowapi
 python-dotenv
+git+https://github.com/iwatkot/maps4fs.git@supd
