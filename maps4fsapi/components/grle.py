@@ -34,6 +34,7 @@ def grle_generation(
         assets = ["farmlands"]
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

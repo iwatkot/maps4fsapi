@@ -19,30 +19,49 @@ class TasksQueue(metaclass=Singleton):
 
     def __init__(self):
         self.tasks = queue.Queue()
+        self.active_sessions = set()  # Track session names currently in queue or processing
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
-    def add_task(self, func: Callable, *args, **kwargs):
-        """Adds a task to the queue.
+    def add_task(self, session_name: str, func: Callable, *args, **kwargs):
+        """Adds a task to the queue with a session name identifier.
 
         Arguments:
+            session_name (str): Unique session identifier for the task.
             func (Callable): The function to be executed as a task.
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
         """
-        logger.debug("Adding task to queue: %s", func.__name__)
-        self.tasks.put((func, args, kwargs))
+        logger.debug("Adding task to queue: %s (session: %s)", func.__name__, session_name)
+        self.active_sessions.add(session_name)
+        self.tasks.put((session_name, func, args, kwargs))
+
+    def is_in_queue(self, session_name: str) -> bool:
+        """Check if a task with the given session name is currently in queue or being processed.
+
+        Arguments:
+            session_name (str): The session name to check.
+
+        Returns:
+            bool: True if session is active (queued or processing), False otherwise.
+        """
+        return session_name in self.active_sessions
 
     def _worker(self):
         while True:
-            func, args, kwargs = self.tasks.get()
+            session_name, func, args, kwargs = self.tasks.get()
             try:
                 func(*args, **kwargs)
-                logger.debug("Task completed: %s", func.__name__)
+                logger.debug("Task completed: %s (session: %s)", func.__name__, session_name)
             except Exception as e:
-                logger.error("Task %s failed with error: %s", func.__name__, e)
+                logger.error(
+                    "Task %s (session: %s) failed with error: %s", func.__name__, session_name, e
+                )
                 raise e
-            self.tasks.task_done()
+            finally:
+                # Remove session from active set when task completes or fails
+                self.active_sessions.discard(session_name)
+                self.tasks.task_done()
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:

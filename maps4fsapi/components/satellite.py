@@ -36,6 +36,7 @@ def satellite_generation(
         assets = ["background"]
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

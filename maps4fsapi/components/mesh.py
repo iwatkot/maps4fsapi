@@ -39,6 +39,7 @@ def mesh_generation(
     payload.background_settings.generate_water = generate_water
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

@@ -1,6 +1,7 @@
 """Main entry point for the Maps4FS API application."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from maps4fsapi.components.dtm import dtm_router
 from maps4fsapi.components.grle import grle_router
@@ -13,6 +14,15 @@ from maps4fsapi.components.texture import texture_router
 from maps4fsapi.config import package_version
 
 app = FastAPI()
+
+# Add CORS middleware to allow requests from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for public API
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 app.include_router(dtm_router, prefix="/dtm")
 app.include_router(mesh_router, prefix="/mesh")

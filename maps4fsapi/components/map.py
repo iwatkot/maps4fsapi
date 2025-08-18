@@ -26,6 +26,7 @@ def map_generation(
     task_id = get_session_name_from_payload(payload)
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

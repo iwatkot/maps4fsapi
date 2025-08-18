@@ -30,6 +30,7 @@ def texture_generation(
         assets = payload.layer_names
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

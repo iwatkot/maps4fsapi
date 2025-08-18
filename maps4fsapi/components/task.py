@@ -9,6 +9,7 @@ from maps4fsapi.components.models import TaskIdPayload
 from maps4fsapi.config import logger
 from maps4fsapi.limits import dependencies
 from maps4fsapi.storage import Storage
+from maps4fsapi.tasks import TasksQueue
 
 task_router = APIRouter(dependencies=dependencies)
 
@@ -28,6 +29,12 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
     logger.info("Received request to get task with ID: %s", payload.task_id)
     entry = Storage().get_entry(payload.task_id)
     if not entry:
+        if TasksQueue().is_in_queue(payload.task_id):
+            logger.warning("Task ID %s is still in the queue.", payload.task_id)
+            raise HTTPException(
+                status_code=202,
+                detail="Task ID is still in the queue.",
+            )
         logger.warning("Task ID %s not found.", payload.task_id)
         raise HTTPException(
             status_code=404,
