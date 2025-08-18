@@ -29,16 +29,24 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
     logger.info("Received request to get task with ID: %s", payload.task_id)
     entry = Storage().get_entry(payload.task_id)
     if not entry:
+        # * Order matters! Currently processing task is also in the queue.
+        if TasksQueue().is_processing(payload.task_id):
+            logger.warning("Task ID %s is currently being processed.", payload.task_id)
+            raise HTTPException(
+                status_code=202,
+                detail=f"Task ID {payload.task_id} is currently being processed.",
+            )
         if TasksQueue().is_in_queue(payload.task_id):
             logger.warning("Task ID %s is still in the queue.", payload.task_id)
             raise HTTPException(
-                status_code=202,
-                detail="Task ID is still in the queue.",
+                status_code=204,
+                detail=f"Task ID {payload.task_id} is still in the queue.",
             )
+
         logger.warning("Task ID %s not found.", payload.task_id)
         raise HTTPException(
             status_code=404,
-            detail="Task ID not found. It's expired or not finished yet.",
+            detail=f"Task ID {payload.task_id} not found. It's expired or not finished yet.",
         )
 
     if not entry.success:
@@ -52,7 +60,7 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
         logger.warning("No file path found for task ID %s.", payload.task_id)
         raise HTTPException(
             status_code=404,
-            detail="No file path found for the task.",
+            detail=f"No file path found for task ID {payload.task_id}.",
         )
 
     if not os.path.isfile(entry.file_path):
@@ -61,7 +69,7 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
         )
         raise HTTPException(
             status_code=404,
-            detail="File not found.",
+            detail=f"File not found for task ID {payload.task_id}.",
         )
 
     background_tasks.add_task(Storage().remove_entry, payload.task_id)

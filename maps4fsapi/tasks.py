@@ -20,6 +20,7 @@ class TasksQueue(metaclass=Singleton):
     def __init__(self):
         self.tasks = queue.Queue()
         self.active_sessions = set()  # Track session names currently in queue or processing
+        self.processing_now = None
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
@@ -47,9 +48,21 @@ class TasksQueue(metaclass=Singleton):
         """
         return session_name in self.active_sessions
 
+    def is_processing(self, session_name: str) -> bool:
+        """Check if a task with the given session name is currently being processed.
+
+        Arguments:
+            session_name (str): The session name to check.
+
+        Returns:
+            bool: True if session is currently being processed, False otherwise.
+        """
+        return session_name == self.processing_now
+
     def _worker(self):
         while True:
             session_name, func, args, kwargs = self.tasks.get()
+            self.processing_now = session_name
             try:
                 func(*args, **kwargs)
                 logger.debug("Task completed: %s (session: %s)", func.__name__, session_name)
@@ -62,6 +75,7 @@ class TasksQueue(metaclass=Singleton):
                 # Remove session from active set when task completes or fails
                 self.active_sessions.discard(session_name)
                 self.tasks.task_done()
+                self.processing_now = None
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
