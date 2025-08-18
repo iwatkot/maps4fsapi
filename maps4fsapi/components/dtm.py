@@ -41,7 +41,13 @@ def dtm_info(payload: DTMCodePayload):
     dtm = mfs.DTMProvider.get_provider_by_code(payload.code)
     if not dtm:
         raise HTTPException(status_code=404, detail="DTM provider with this code not found")
-    return {"valid": True, "provider": dtm.description()}
+    settings = dtm.settings()().model_dump() if dtm.settings() else {}
+    return {
+        "valid": True,
+        "provider": dtm.description(),
+        "settings_required": dtm.settings_required(),
+        "settings": settings,
+    }
 
 
 @dtm_router.post("/dem")
