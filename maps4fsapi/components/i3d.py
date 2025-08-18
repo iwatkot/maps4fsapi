@@ -38,6 +38,7 @@ def i3d_generation(
         assets = ["splines"]
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,
