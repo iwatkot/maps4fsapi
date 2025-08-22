@@ -2,7 +2,7 @@
 
 import os
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import FileResponse
 
 from maps4fsapi.components.models import TaskIdPayload
@@ -14,12 +14,16 @@ from maps4fsapi.tasks import TasksQueue
 task_router = APIRouter(dependencies=dependencies)
 
 
+@task_router.post("/status")
 @task_router.post("/get")
-def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
+def get_task(payload: TaskIdPayload, request: Request, background_tasks: BackgroundTasks):
     """Retrieve a task result based on the provided task ID.
+    If used the 'status' endpoint, does not return actual data.
+    If used the 'get' endpoint, returns the actual data and removes the entry from storage.
 
     Arguments:
         payload (TaskIdPayload): The payload containing the task ID.
+        request (Request): The request object.
         background_tasks (BackgroundTasks): Background tasks to handle cleanup after response.
     Raises:
         HTTPException: If the task ID is not found, the task failed, or the file is not available.
@@ -71,6 +75,14 @@ def get_task(payload: TaskIdPayload, background_tasks: BackgroundTasks):
             status_code=404,
             detail=f"File not found for task ID {payload.task_id}.",
         )
+
+    endpoint = request.url.path
+    if endpoint.endswith("/status"):
+        return {
+            "success": True,
+            "description": "Task completed successfully. Use the 'get' endpoint to retrieve the file.",
+            "task_id": payload.task_id,
+        }
 
     background_tasks.add_task(Storage().remove_entry, payload.task_id)
     logger.info("Returning file for task ID %s: %s", payload.task_id, entry.file_path)

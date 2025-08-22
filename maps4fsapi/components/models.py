@@ -34,6 +34,8 @@ class MainSettingsPayload(BaseModel):
     lon: float
     size: int
     rotation: int = 0
+    output_size: int | None = None
+    # dtm_settings: mfs.DTMProviderSettings | None = None # ! Import to maps4fs from pygmdl.
 
 
 class DEMSettingsPayload(MainSettingsPayload):
