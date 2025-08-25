@@ -1,0 +1,7 @@
+uvicorn
+fastapi
+maps4fs
+cachetools
+slowapi
+python-dotenv
+git+https://github.com/iwatkot/maps4fs.git@supd
