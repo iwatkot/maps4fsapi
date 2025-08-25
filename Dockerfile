@@ -82,20 +82,12 @@ RUN git clone --depth 1 https://github.com/iwatkot/maps4fsdata.git /tmp/maps4fsd
     && cp -r data /usr/src/app/data \
     && rm -rf /tmp/maps4fsdata
 
-COPY .streamlit /usr/src/app/.streamlit
-COPY maps4fsui /usr/src/app/maps4fsui
 COPY requirements.txt /usr/src/app/requirements.txt
 COPY entrypoint.sh /usr/src/app/entrypoint.sh
 RUN chmod +x /usr/src/app/entrypoint.sh
 
 RUN pip install -r requirements.txt
 
-COPY favicon.png /usr/local/lib/python3.11/site-packages/streamlit/static/favicon.png
-
-RUN sed -i 's|<noscript>.*</noscript>|<noscript>Generate map templates for Farming Simulator from real places in a couple of clicks. Get the realistic terrain, roads, rivers, fields, and more. Completely free and open-source.</noscript>|' /usr/local/lib/python3.11/site-packages/streamlit/static/index.html
-RUN sed -i 's|<title>.*</title>|<title>maps4FS</title>|' /usr/local/lib/python3.11/site-packages/streamlit/static/index.html
-
-EXPOSE 8501
 EXPOSE 8000
 
 ENV PYTHONPATH .:${PYTHONPATH}
