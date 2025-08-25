@@ -1,0 +1,52 @@
+name: Manual Docker Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for the Docker image'
+        required: true
+        default: 'dev'
+        type: string
+      set_latest:
+        description: 'Also tag as latest'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ inputs.set_latest && 'iwatkot/maps4fsapi:latest,' || '' }}iwatkot/maps4fsapi:${{ inputs.version }}
+        file: ./Dockerfile
+        build-args: |
+          API_TOKEN=${{ secrets.API_TOKEN }}
+          STATS_HOST=${{ secrets.STATS_HOST }}
+
+    - name: Summary
+      run: |
+        echo "## 🐳 Docker Build Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Tags pushed:**" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.set_latest }}" = "true" ]; then
+          echo "- \`iwatkot/maps4fsapi:latest\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "- \`iwatkot/maps4fsapi:${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
