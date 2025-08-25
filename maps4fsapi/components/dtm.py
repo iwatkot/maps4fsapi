@@ -1,7 +1,5 @@
 """DTM (Digital Terrain Model) API endpoints for Maps4FS."""
 
-import uuid
-
 import maps4fs as mfs
 from fastapi import APIRouter, HTTPException, Request
 
@@ -11,7 +9,7 @@ from maps4fsapi.components.models import (
     LatLonPayload,
 )
 from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
-from maps4fsapi.tasks import TasksQueue, task_generation
+from maps4fsapi.tasks import TasksQueue, get_session_name_from_payload, task_generation
 
 dtm_router = APIRouter(dependencies=dependencies)
 
@@ -43,7 +41,13 @@ def dtm_info(payload: DTMCodePayload):
     dtm = mfs.DTMProvider.get_provider_by_code(payload.code)
     if not dtm:
         raise HTTPException(status_code=404, detail="DTM provider with this code not found")
-    return {"valid": True, "provider": dtm.description()}
+    settings = dtm.settings()().model_dump() if dtm.settings() else {}
+    return {
+        "valid": True,
+        "provider": dtm.description(),
+        "settings_required": dtm.settings_required(),
+        "settings": settings,
+    }
 
 
 @dtm_router.post("/dem")
@@ -57,9 +61,10 @@ def dtm_dem(payload: DEMSettingsPayload, request: Request) -> dict[str, str | bo
     Returns:
         dict: A dictionary containing the success status, description, and task ID.
     """
-    task_id = str(uuid.uuid4())
+    task_id = get_session_name_from_payload(payload)
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

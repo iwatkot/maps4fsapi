@@ -4,12 +4,13 @@ import os
 import queue
 import threading
 import zipfile
-from typing import Callable, Type
+from typing import Callable
 
 import maps4fs as mfs
+import maps4fs.generator.config as mfscfg
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import Singleton, archives_dir, is_public, logger, tasks_dir
+from maps4fsapi.config import Singleton, is_public, logger
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -18,34 +19,93 @@ class TasksQueue(metaclass=Singleton):
 
     def __init__(self):
         self.tasks = queue.Queue()
+        self.active_sessions = set()  # Track session names currently in queue or processing
+        self.processing_now = None
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
-    def add_task(self, func: Callable, *args, **kwargs):
-        """Adds a task to the queue.
+    def add_task(self, session_name: str, func: Callable, *args, **kwargs):
+        """Adds a task to the queue with a session name identifier.
 
         Arguments:
+            session_name (str): Unique session identifier for the task.
             func (Callable): The function to be executed as a task.
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
         """
-        logger.debug("Adding task to queue: %s", func.__name__)
-        self.tasks.put((func, args, kwargs))
+        logger.debug("Adding task to queue: %s (session: %s)", func.__name__, session_name)
+        self.active_sessions.add(session_name)
+        self.tasks.put((session_name, func, args, kwargs))
+
+    def is_in_queue(self, session_name: str) -> bool:
+        """Check if a task with the given session name is currently in queue or being processed.
+
+        Arguments:
+            session_name (str): The session name to check.
+
+        Returns:
+            bool: True if session is active (queued or processing), False otherwise.
+        """
+        return session_name in self.active_sessions
+
+    def is_processing(self, session_name: str) -> bool:
+        """Check if a task with the given session name is currently being processed.
+
+        Arguments:
+            session_name (str): The session name to check.
+
+        Returns:
+            bool: True if session is currently being processed, False otherwise.
+        """
+        return session_name == self.processing_now
 
     def _worker(self):
         while True:
-            func, args, kwargs = self.tasks.get()
+            session_name, func, args, kwargs = self.tasks.get()
+            self.processing_now = session_name
             try:
                 func(*args, **kwargs)
-                logger.debug("Task completed: %s", func.__name__)
+                logger.debug("Task completed: %s (session: %s)", func.__name__, session_name)
             except Exception as e:
-                logger.error("Task %s failed with error: %s", func.__name__, e)
-            self.tasks.task_done()
+                logger.error(
+                    "Task %s (session: %s) failed with error: %s", func.__name__, session_name, e
+                )
+                raise e
+            finally:
+                # Remove session from active set when task completes or fails
+                self.active_sessions.discard(session_name)
+                self.tasks.task_done()
+                self.processing_now = None
+
+
+def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
+    """Generates a session name based on the coordinates and game code.
+
+    Arguments:
+        coordinates (tuple[float, float]): The latitude and longitude coordinates.
+        game_code (str): The game code.
+
+    Returns:
+        str: The generated session name.
+    """
+    return mfs.Map.suggest_directory_name(coordinates, game_code)
+
+
+def get_session_name_from_payload(payload: MainSettingsPayload) -> str:
+    """Generates a session name based on the payload.
+
+    Arguments:
+        payload (MainSettingsPayload): The settings payload containing map generation parameters.
+
+    Returns:
+        str: The generated session name.
+    """
+    return get_session_name((payload.lat, payload.lon), payload.game_code)
 
 
 def task_generation(
-    task_id: str,
-    payload: Type[MainSettingsPayload],
+    session_name: str,
+    payload: MainSettingsPayload,
     components: list[str] | None = None,
     assets: list[str] | None = None,
     include_all: bool = False,
@@ -53,7 +113,7 @@ def task_generation(
     """Generates a map based on the provided payload and saves the output.
 
     Arguments:
-        task_id (str): Unique identifier for the task.
+        session_name (str): Unique identifier for the task.
         payload (MainSettingsPayload): The settings payload containing map generation parameters.
         components (list[str]): List of components to be included in the map.
         assets (list[str] | None): Optional list of specific assets to include in the output.
@@ -62,7 +122,7 @@ def task_generation(
     task_directory = None
     output_path = None
     try:
-        logger.debug("Starting task %s with payload: %s", task_id, payload)
+        logger.debug("Starting task %s with payload: %s", session_name, payload)
         success = True
         description = "Task completed successfully."
 
@@ -78,14 +138,27 @@ def task_generation(
             raise ValueError(f"DTM provider with code {payload.dtm_code} not found.")
 
         coordinates = (payload.lat, payload.lon)
-        task_directory = os.path.join(tasks_dir, task_id)
+        task_directory = os.path.join(mfscfg.MFS_DATA_DIR, session_name)
         os.makedirs(task_directory, exist_ok=True)
 
-        map_settings = {
+        prepared_settings = {
             attr: getattr(payload, attr)
             for attr in dir(payload)
             if attr.endswith("_settings") and hasattr(payload, attr)
         }
+        generation_settings_json = {}
+        for key, value in prepared_settings.items():
+            if isinstance(value, mfs.settings.SettingsModel):
+                new_value = value.model_dump()
+            elif isinstance(value, dict):
+                new_value = value
+            else:
+                continue
+            generation_settings_json[key] = new_value
+
+        generation_settings = mfs.GenerationSettings.from_json(
+            generation_settings_json, from_snake=True, safe=True
+        )
 
         mp = mfs.Map(
             game,
@@ -95,7 +168,7 @@ def task_generation(
             payload.size,
             payload.rotation,
             map_directory=task_directory,
-            **map_settings,
+            generation_settings=generation_settings,
             api_request=True,
         )
 
@@ -116,7 +189,7 @@ def task_generation(
             pass
 
         outputs = []
-        if not include_all:
+        if not include_all and components:
             for component in components:
                 active_component = mp.get_component(component)
                 if not active_component:
@@ -135,30 +208,31 @@ def task_generation(
                     outputs.extend(list(active_component.assets.values()))
         else:
             logger.debug("Working with a mode including all components.")
-            archive_path = os.path.join(archives_dir, f"{task_id}.zip")
-            mp.pack(archive_path.replace(".zip", ""))
+            archive_path = os.path.join(mfscfg.MFS_DATA_DIR, f"{session_name}.zip")
+            mp.pack(archive_path.replace(".zip", ""), remove_source=False)
             outputs.append(archive_path)
 
         logger.debug("Generated outputs: %s", outputs)
         if not outputs:
             raise ValueError("No outputs generated. Check the provided settings and components.")
         if len(outputs) > 1:
-            output_path = os.path.join(task_directory, f"{task_id}.zip")
+            output_path = os.path.join(task_directory, f"{session_name}.zip")
             files_to_archive(outputs, output_path)
         else:
             output_path = outputs[0]
 
-        logger.info("Task %s completed successfully. Output saved to %s", task_id, output_path)
+        logger.info("Task %s completed successfully. Output saved to %s", session_name, output_path)
     except Exception as e:
         success = False
         description = f"Task failed with error: {e}"
-        logger.error("Task %s failed with error: %s", task_id, e)
+        logger.error("Task %s failed with error: %s", session_name, e)
+        raise e
 
     storage_entry = StorageEntry(
         success=success, description=description, directory=task_directory, file_path=output_path
     )
 
-    Storage().add_entry(task_id, storage_entry)
+    Storage().add_entry(session_name, storage_entry)
 
 
 def files_to_archive(filepaths: list[str], archive_path: str) -> None:
@@ -180,9 +254,7 @@ def adjust_settings_for_public(mp: mfs.Map) -> None:
     Arguments:
         mp (mfs.Map): The map instance to adjust.
     """
-    mp.background_settings.resize_factor = max(mp.background_settings.resize_factor, 8)
     mp.satellite_settings.zoom_level = min(mp.satellite_settings.zoom_level, 16)
-
     mp.texture_settings.dissolve = False
 
     logger.debug("Adjusted map settings for public access.")

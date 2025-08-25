@@ -1,0 +1,24 @@
+#!/bin/bash
+
+echo "======================================"
+echo "   maps4FS Docker Container Startup   "
+echo "======================================"
+echo "Date: $(date)"
+echo "User: $(whoami)"
+echo "Working Directory: $(pwd)"
+echo "Python version: $(python --version)"
+echo "Uvicorn version: $(uvicorn --version)"
+echo "PYTHONPATH: $PYTHONPATH"
+echo "--------------------------------------"
+echo "Removing the queue.json file if it exists..."
+if [ -f "queue.json" ]; then
+    rm "queue.json"
+    echo "Removed queue.json file."
+else
+    echo "queue.json file does not exist."
+fi
+echo "--------------------------------------"
+echo "Starting FastAPI (Uvicorn) on port 8000..."
+echo "======================================"
+
+uvicorn maps4fsapi.main:app --host 0.0.0.0 --port 8000

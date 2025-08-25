@@ -1,12 +1,10 @@
 """Generate mesh data for the given payload."""
 
-import uuid
-
 from fastapi import APIRouter, Request
 
 from maps4fsapi.components.models import BackgroundSettingsPayload
 from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
-from maps4fsapi.tasks import TasksQueue, task_generation
+from maps4fsapi.tasks import TasksQueue, get_session_name_from_payload, task_generation
 
 mesh_router = APIRouter(dependencies=dependencies)
 
@@ -28,7 +26,7 @@ def mesh_generation(
     """
     endpoint = request.url.path
 
-    task_id = str(uuid.uuid4())
+    task_id = get_session_name_from_payload(payload)
 
     if endpoint.endswith("/water"):
         generate_water = True
@@ -41,6 +39,7 @@ def mesh_generation(
     payload.background_settings.generate_water = generate_water
 
     TasksQueue().add_task(
+        task_id,
         task_generation,
         task_id,
         payload,

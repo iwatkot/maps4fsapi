@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from slowapi import Limiter
 
-from maps4fsapi.config import SECRET_SALT, is_public, logger
+from maps4fsapi.config import FRONTEND_API_KEY, SECRET_SALT, is_public, logger
 
 security = HTTPBearer()
 DEFAULT_PUBLIC_LIMIT = "10/hour"
@@ -50,6 +50,27 @@ def get_bearer_token(request: Request) -> str:
     return auth_header.split(" ")[1]
 
 
+def get_rate_limit_key(request: Request) -> str:
+    """Get the key for rate limiting. Frontend API key bypasses limits.
+
+    Arguments:
+        request (Request): The FastAPI request object.
+
+    Returns:
+        str: A unique key for rate limiting or bypass.
+    """
+    try:
+        token = get_bearer_token(request)
+        # If it's the frontend API key, return a unique key to bypass rate limits
+        if FRONTEND_API_KEY and token == FRONTEND_API_KEY:
+            logger.debug("Frontend API key detected, bypassing rate limits.")
+            return f"frontend_{id(request)}"
+        return token
+    except HTTPException:
+        # If we can't get the token, fall back to IP-based limiting
+        return request.client.host if request.client else "unknown"
+
+
 def public_limiter(*args, **kwargs) -> Callable:
     """Decorator to apply rate limiting to public API endpoints.
 
@@ -77,7 +98,7 @@ def public_limiter(*args, **kwargs) -> Callable:
     return wrapper
 
 
-limiter = Limiter(key_func=get_bearer_token)
+limiter = Limiter(key_func=get_rate_limit_key)
 dependencies = [Depends(api_key_auth)] if is_public else []
 
 
@@ -104,6 +125,11 @@ def validate_api_key(api_key: str) -> bool:
     """
     if not api_key or not isinstance(api_key, str):
         return False
+
+    # Check if it's the frontend API key
+    if FRONTEND_API_KEY and api_key == FRONTEND_API_KEY:
+        logger.debug("Frontend API key validated.")
+        return True
 
     logger.debug("Validating API key: %s", "*" * len(api_key))
     try:
