@@ -14,7 +14,7 @@ RUN git clone --depth 1 https://github.com/iwatkot/maps4fsdata.git /tmp/maps4fsd
     && cd /tmp/maps4fsdata \
     && chmod +x prepare_data.sh \
     && ./prepare_data.sh \
-    && cp -r data /usr/src/app/data \
+    && cp -r data /usr/src/app/templates \
     && rm -rf /tmp/maps4fsdata
 
 COPY requirements.txt /usr/src/app/requirements.txt
