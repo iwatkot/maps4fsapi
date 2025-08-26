@@ -32,6 +32,9 @@
 [![Join Discord](https://img.shields.io/badge/join-discord-blue)](https://discord.gg/Sj5QKKyE42)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/iwatkot/maps4fsapi)](https://github.com/iwatkot/maps4fs/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/iwatkot/maps4fsapi)](https://hub.docker.com/r/iwatkot/maps4fsapi)
+[![Docker Image Size](https://img.shields.io/docker/image-size/iwatkot/maps4fsapi)](https://hub.docker.com/r/iwatkot/maps4fsapi)
+[![Docker Version](https://img.shields.io/docker/v/iwatkot/maps4fsapi)](https://hub.docker.com/r/iwatkot/maps4fsapi)
+<br>
 [![GitHub issues](https://img.shields.io/github/issues/iwatkot/maps4fsapi)](https://github.com/iwatkot/maps4fsapi/issues)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![Build Status](https://github.com/iwatkot/maps4fsapi/actions/workflows/checks.yml/badge.svg)](https://github.com/iwatkot/maps4fsapi/actions)
