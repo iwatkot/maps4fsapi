@@ -1,4 +1,4 @@
-name: Manual Redeploy
+name: Manual Redeploy API container
 
 on:
   workflow_dispatch:
@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Make POST request to redeploy
+      - name: Make POST request to redeploy API container
         run: |
           curl -X POST "${{ secrets.REDEPLOY_ENDPOINT }}" \
             -H "Authorization: Bearer ${{ secrets.PRIVATE_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"container_key": "generator"}'
+            -d '{"container_key": "api"}'
