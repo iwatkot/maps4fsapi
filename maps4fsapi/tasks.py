@@ -226,11 +226,13 @@ def task_generation(
         success = False
         description = f"Task failed with error: {e}"
         logger.error("Task %s failed with error: %s", session_name, e)
-        raise e
-
-    storage_entry = StorageEntry(
-        success=success, description=description, directory=task_directory, file_path=output_path
-    )
+    finally:
+        storage_entry = StorageEntry(
+            success=success,
+            description=description,
+            directory=task_directory,
+            file_path=output_path,
+        )
 
     Storage().add_entry(session_name, storage_entry)
 

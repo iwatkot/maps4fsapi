@@ -24,3 +24,4 @@ data/
 tasks/
 *.env
 mfsrootdir/
+templates/
