@@ -35,13 +35,13 @@ def get_task(payload: TaskIdPayload, request: Request, background_tasks: Backgro
     if not entry:
         # * Order matters! Currently processing task is also in the queue.
         if TasksQueue().is_processing(payload.task_id):
-            logger.warning("Task ID %s is currently being processed.", payload.task_id)
+            logger.debug("Task ID %s is currently being processed.", payload.task_id)
             raise HTTPException(
                 status_code=202,
                 detail=f"Task ID {payload.task_id} is currently being processed.",
             )
         if TasksQueue().is_in_queue(payload.task_id):
-            logger.warning("Task ID %s is still in the queue.", payload.task_id)
+            logger.debug("Task ID %s is still in the queue.", payload.task_id)
             raise HTTPException(
                 status_code=204,
                 detail=f"Task ID {payload.task_id} is still in the queue.",

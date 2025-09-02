@@ -10,7 +10,7 @@ import maps4fs as mfs
 import maps4fs.generator.config as mfscfg
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import Singleton, is_public, logger
+from maps4fsapi.config import MFS_CUSTOM_OSM_DIR, Singleton, is_public, logger
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -122,7 +122,18 @@ def task_generation(
     task_directory = None
     output_path = None
     try:
-        logger.debug("Starting task %s with payload: %s", session_name, payload)
+        # Log payload without the potentially huge OSM data
+        payload_summary = {
+            "game_code": payload.game_code,
+            "dtm_code": payload.dtm_code,
+            "lat": payload.lat,
+            "lon": payload.lon,
+            "size": payload.size,
+            "rotation": payload.rotation,
+            "has_custom_osm": hasattr(payload, "custom_osm_xml")
+            and payload.custom_osm_xml is not None,
+        }
+        logger.info("Starting task %s with payload summary: %s", session_name, payload_summary)
         success = True
         description = "Task completed successfully."
 
@@ -160,6 +171,15 @@ def task_generation(
             generation_settings_json, from_snake=True, safe=True
         )
 
+        custom_osm = None
+        if payload.custom_osm_xml:
+            try:
+                save_path = os.path.join(MFS_CUSTOM_OSM_DIR, f"{session_name}_custom.osm")
+                osm_str_to_xml(payload.custom_osm_xml, save_path)
+                custom_osm = save_path
+            except Exception as e:
+                logger.error("Failed to convert custom OSM XML: %s", e)
+
         mp = mfs.Map(
             game,
             dtm_provider,
@@ -169,7 +189,7 @@ def task_generation(
             payload.rotation,
             map_directory=task_directory,
             generation_settings=generation_settings,
-            api_request=True,
+            custom_osm=custom_osm,
         )
 
         if is_public:
@@ -260,3 +280,21 @@ def adjust_settings_for_public(mp: mfs.Map) -> None:
     mp.texture_settings.dissolve = False
 
     logger.debug("Adjusted map settings for public access.")
+
+
+def osm_str_to_xml(custom_osm_str: str, save_path: str) -> None:
+    """Converts an OSM stringified data to XML format and saves it to a file.
+
+    Arguments:
+        custom_osm_str (str): The OSM XML string to save.
+        save_path (str): The path to save the XML file.
+    """
+    try:
+        with open(save_path, "w", encoding="utf-8") as f:
+            f.write(custom_osm_str)
+
+        logger.debug("Successfully saved OSM XML to: %s", save_path)
+
+    except Exception as e:
+        logger.error("Failed to save OSM XML to file: %s", e)
+        raise ValueError(f"Error saving OSM data: {e}")

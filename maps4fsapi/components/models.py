@@ -35,6 +35,8 @@ class MainSettingsPayload(BaseModel):
     size: int
     rotation: int = 0
     output_size: int | None = None
+    # Custom OSM is a JSON string representing OSM data in XML format.
+    custom_osm_xml: str | None = None
     # dtm_settings: mfs.DTMProviderSettings | None = None # ! Import to maps4fs from pygmdl.
 
 
