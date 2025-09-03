@@ -130,6 +130,7 @@ def task_generation(
             "lon": payload.lon,
             "size": payload.size,
             "rotation": payload.rotation,
+            "is_public": payload.is_public,
             "has_custom_osm": hasattr(payload, "custom_osm_xml")
             and payload.custom_osm_xml is not None,
         }
@@ -190,6 +191,7 @@ def task_generation(
             map_directory=task_directory,
             generation_settings=generation_settings,
             custom_osm=custom_osm,
+            is_public=payload.is_public,
         )
 
         if is_public:
