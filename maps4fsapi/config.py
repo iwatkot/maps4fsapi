@@ -5,9 +5,13 @@ import subprocess
 from typing import Any
 
 import maps4fs as mfs
+import maps4fs.generator.config as mfscfg
 from dotenv import load_dotenv
 
-logger = mfs.Logger(level="DEBUG")
+logger = mfs.Logger(level="INFO")
+
+MFS_CUSTOM_OSM_DIR = os.path.join(mfscfg.MFS_ROOT_DIR, "custom_osm")
+os.makedirs(MFS_CUSTOM_OSM_DIR, exist_ok=True)
 
 local_env = os.path.join(os.getcwd(), "local.env")
 if os.path.isfile(local_env):
