@@ -210,6 +210,8 @@ def task_generation(
         for _ in mp.generate():
             pass
 
+        previews = mp.previews()
+
         outputs = []
         if not include_all and components:
             for component in components:
@@ -242,8 +244,6 @@ def task_generation(
             files_to_archive(outputs, output_path)
         else:
             output_path = outputs[0]
-
-        previews = mp.previews()
 
         logger.info("Task %s completed successfully. Output saved to %s", session_name, output_path)
     except Exception as e:
