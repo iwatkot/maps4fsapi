@@ -30,7 +30,7 @@ def get_task(payload: TaskIdPayload, request: Request, background_tasks: Backgro
     Returns:
         FileResponse: A response containing the DEM file if successful, or an error message.
     """
-    logger.info("Received request to get task with ID: %s", payload.task_id)
+    logger.debug("Received request to get task with ID: %s", payload.task_id)
     entry = Storage().get_entry(payload.task_id)
     if not entry:
         # * Order matters! Currently processing task is also in the queue.
