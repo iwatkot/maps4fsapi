@@ -15,12 +15,14 @@ class StorageEntry(NamedTuple):
         description (str): A description containing details about the status.
         directory (str): The directory where the asset is stored.
         file_path (str): The path to the file within the directory.
+        previews (list[str] | None): A list of preview file paths for the asset.
     """
 
     success: bool
     description: str
     directory: str | None = None
     file_path: str | None = None
+    previews: list[str] = []
 
 
 class Storage(metaclass=Singleton):
@@ -40,7 +42,13 @@ class Storage(metaclass=Singleton):
         self.cache[key] = entry
 
     def create_entry(
-        self, key: str, success: bool, description: str, directory: str, file_path: str
+        self,
+        key: str,
+        success: bool,
+        description: str,
+        directory: str,
+        file_path: str,
+        previews: list[str] | None = None,
     ) -> None:
         """Create and add a new storage entry.
 
@@ -50,9 +58,16 @@ class Storage(metaclass=Singleton):
             description (str): A description containing details about the status.
             directory (str): The directory where the asset is stored.
             file_path (str): The path to the file within the directory.
+            previews (list[str] | None): A list of preview file paths for the asset.
         """
+        previews = previews or []
+
         entry = StorageEntry(
-            success=success, description=description, directory=directory, file_path=file_path
+            success=success,
+            description=description,
+            directory=directory,
+            file_path=file_path,
+            previews=previews,
         )
         self.add_entry(key, entry)
 

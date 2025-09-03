@@ -243,17 +243,22 @@ def task_generation(
         else:
             output_path = outputs[0]
 
+        previews = mp.previews()
+
         logger.info("Task %s completed successfully. Output saved to %s", session_name, output_path)
     except Exception as e:
         success = False
         description = f"Task failed with error: {e}"
         logger.error("Task %s failed with error: %s", session_name, e)
+
+        previews = []
     finally:
         storage_entry = StorageEntry(
             success=success,
             description=description,
             directory=task_directory,
             file_path=output_path,
+            previews=previews,
         )
 
     Storage().add_entry(session_name, storage_entry)
