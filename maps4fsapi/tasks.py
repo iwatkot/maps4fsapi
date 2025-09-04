@@ -149,6 +149,21 @@ def task_generation(
         if not dtm_provider:
             raise ValueError(f"DTM provider with code {payload.dtm_code} not found.")
 
+        dtm_provider_settings = None
+        if dtm_provider.settings_required():
+            logger.debug("DTM provider requires settings, will validate provided settings.")
+            if not payload.dtm_settings:
+                raise ValueError(
+                    "Specified DTM Provider requires additional settings, but none were provided."
+                )
+            logger.debug("Validating DTM provider settings: %s", payload.dtm_settings)
+            try:
+                dtm_provider_settings = dtm_provider.settings()(**payload.dtm_settings)
+                logger.debug("DTM provider settings validated successfully.")
+            except Exception as e:
+                logger.error("Failed to validate DTM provider settings: %s", e)
+                raise
+
         coordinates = (payload.lat, payload.lon)
         task_directory = os.path.join(mfscfg.MFS_DATA_DIR, session_name)
         os.makedirs(task_directory, exist_ok=True)
@@ -184,7 +199,7 @@ def task_generation(
         mp = mfs.Map(
             game,
             dtm_provider,
-            None,
+            dtm_provider_settings,
             coordinates,
             payload.size,
             payload.rotation,

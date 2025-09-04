@@ -38,7 +38,8 @@ class MainSettingsPayload(BaseModel):
     # Custom OSM is a JSON string representing OSM data in XML format.
     custom_osm_xml: str | None = None
     is_public: bool = False
-    # dtm_settings: mfs.DTMProviderSettings | None = None # ! Import to maps4fs from pygmdl.
+    # DTM Settings may be required for some DTM providers.
+    dtm_settings: dict | None = None
 
 
 class DEMSettingsPayload(MainSettingsPayload):
