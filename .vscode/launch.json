@@ -13,6 +13,8 @@
           "--port",
           "8000",
           "--reload",
+          "--log-level",
+          "warning"
       ],
       "justMyCode": true,
       "env": {

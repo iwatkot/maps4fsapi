@@ -129,6 +129,7 @@ def task_generation(
             "lat": payload.lat,
             "lon": payload.lon,
             "size": payload.size,
+            "output_size": (payload.output_size if payload.output_size else None),
             "rotation": payload.rotation,
             "is_public": payload.is_public,
             "has_custom_osm": hasattr(payload, "custom_osm_xml")
@@ -207,6 +208,7 @@ def task_generation(
             generation_settings=generation_settings,
             custom_osm=custom_osm,
             is_public=payload.is_public,
+            output_size=payload.output_size,
         )
 
         if is_public:
