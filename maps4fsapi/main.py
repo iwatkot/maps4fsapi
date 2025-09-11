@@ -12,6 +12,7 @@ from maps4fsapi.components.map import map_router
 from maps4fsapi.components.mesh import mesh_router
 from maps4fsapi.components.satellite import satellite_router
 from maps4fsapi.components.task import task_router
+from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
 from maps4fsapi.config import package_version
 
@@ -37,6 +38,7 @@ app.include_router(i3d_router, prefix="/i3d")
 app.include_router(texture_router, prefix="/texture")
 app.include_router(map_router, prefix="/map")
 app.include_router(satellite_router, prefix="/satellite")
+app.include_router(templates_router, prefix="/templates")
 
 
 @app.get("/info/version")
