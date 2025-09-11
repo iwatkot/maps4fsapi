@@ -8,13 +8,12 @@ import maps4fs.generator.config as mfscfg
 from fastapi import APIRouter, HTTPException
 
 from maps4fsapi.components.models import SchemaPayload
-from maps4fsapi.limits import DEFAULT_PUBLIC_LIMIT, dependencies, public_limiter
+from maps4fsapi.limits import dependencies
 
 templates_router = APIRouter(dependencies=dependencies)
 
 
 @templates_router.post("/schemas")
-@public_limiter(DEFAULT_PUBLIC_LIMIT)
 def get_schema(payload: SchemaPayload):
     """Get JSON schema for provided parameters.
 
