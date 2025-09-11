@@ -25,10 +25,21 @@ class TaskIdPayload(BaseModel):
     task_id: str
 
 
-class MainSettingsPayload(BaseModel):
-    """Main settings payload for generating maps with Maps4FS."""
+class GameCodePayload(BaseModel):
+    """Payload model for game code."""
 
     game_code: Literal["fs22", "fs25"]
+
+
+class SchemaPayload(GameCodePayload):
+    """Payload model for schema, extending GameCodePayload."""
+
+    schema_type: Literal["texture", "tree", "grle"]
+
+
+class MainSettingsPayload(GameCodePayload):
+    """Main settings payload for generating maps with Maps4FS."""
+
     dtm_code: str
     lat: float
     lon: float
