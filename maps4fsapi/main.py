@@ -1,5 +1,7 @@
 """Main entry point for the Maps4FS API application."""
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,6 +14,9 @@ from maps4fsapi.components.satellite import satellite_router
 from maps4fsapi.components.task import task_router
 from maps4fsapi.components.texture import texture_router
 from maps4fsapi.config import package_version
+
+# Configure logging to suppress INFO level access logs
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 app = FastAPI()
 

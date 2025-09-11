@@ -21,4 +21,4 @@ echo "--------------------------------------"
 echo "Starting FastAPI (Uvicorn) on port 8000..."
 echo "======================================"
 
-uvicorn maps4fsapi.main:app --host 0.0.0.0 --port 8000
+uvicorn maps4fsapi.main:app --host 0.0.0.0 --port 8000 --log-level warning
