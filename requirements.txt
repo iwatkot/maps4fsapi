@@ -5,3 +5,5 @@ cachetools
 slowapi
 python-dotenv
 git+https://github.com/iwatkot/maps4fsapi.git
+requests
+types-requests
