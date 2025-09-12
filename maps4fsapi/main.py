@@ -14,7 +14,7 @@ from maps4fsapi.components.satellite import satellite_router
 from maps4fsapi.components.task import task_router
 from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
-from maps4fsapi.config import package_version
+from maps4fsapi.config import package_version, version_status
 
 # Configure logging to suppress INFO level access logs
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
@@ -45,3 +45,9 @@ app.include_router(templates_router, prefix="/templates")
 async def get_version():
     """Endpoint to retrieve the version of the Maps4FS package."""
     return {"version": package_version}
+
+
+@app.get("/info/status")
+async def get_version_status():
+    """Endpoint to retrieve the version status of the Maps4FS package."""
+    return version_status("maps4fs")

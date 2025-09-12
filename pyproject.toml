@@ -23,6 +23,7 @@ dependencies = [
     "cachetools",
     "slowapi",
     "python-dotenv",
+    "requests",
 ]
 
 [project.urls]

@@ -6,7 +6,9 @@ from typing import Any
 
 import maps4fs as mfs
 import maps4fs.generator.config as mfscfg
+import requests
 from dotenv import load_dotenv
+from packaging import version
 
 logger = mfs.Logger(level="INFO")
 
@@ -52,7 +54,14 @@ if FRONTEND_API_KEY:
 
 
 def get_package_version(package_name: str) -> str:
-    """Get the package version."""
+    """Get the package version.
+
+    Arguments:
+        package_name (str): The name of the package to check.
+
+    Returns:
+        str: The version string of the package or an empty string if not found.
+    """
     try:
         result = subprocess.run(
             [os.sys.executable, "-m", "pip", "show", package_name],  # type: ignore
@@ -67,6 +76,65 @@ def get_package_version(package_name: str) -> str:
         return ""
     except Exception:
         return ""
+
+
+def get_package_latest_version(package_name: str) -> str:
+    """Get the latest package version from PyPI.
+
+    Arguments:
+        package_name (str): The name of the package to check.
+
+    Returns:
+        str | None: The latest version string if available, otherwise an empty string.
+    """
+    try:
+        response = requests.get(f"https://pypi.org/pypi/{package_name}/json", timeout=5)
+        response.raise_for_status()
+        latest_version = response.json()["info"]["version"]
+        return latest_version
+    except Exception:
+        return ""
+
+
+def is_latest_version(package_name: str) -> bool:
+    """Check if the current version is the latest version.
+
+    Arguments:
+        current_version (str): The current version string.
+        latest_version (str): The latest version string.
+
+    Returns:
+        bool: True if the current version is the latest, False otherwise.
+    """
+    current_version = get_package_version(package_name)
+    latest_version = get_package_latest_version(package_name)
+
+    if not current_version or not latest_version:
+        return True
+
+    try:
+        return version.parse(current_version) >= version.parse(latest_version)
+    except Exception:
+        return True
+
+
+def version_status(package_name: str) -> dict[str, bool | str]:
+    """Get the version status of the package.
+
+    Arguments:
+        package_name (str): The name of the package to check.
+
+    Returns:
+        dict[str, bool | str]: A dictionary containing the current version, latest version,
+        and whether the current version is the latest.
+    """
+    current_version = get_package_version(package_name)
+    latest_version = get_package_latest_version(package_name)
+    return {
+        "current_version": current_version,
+        "latest_version": latest_version,
+        "is_latest": is_latest_version(package_name),
+    }
 
 
 package_version = get_package_version("maps4fs")
