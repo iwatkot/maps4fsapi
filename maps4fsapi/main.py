@@ -26,12 +26,12 @@ app = FastAPI()
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next: Callable) -> Response:
-    """Middleware to log incoming requests with IP addresses.
+    """Middleware to log incoming requests with IP addresses for map generation endpoint.
 
-    This middleware is designed to be fail-safe - if any part of the logging
-    fails, it will continue processing the request normally. It captures client
-    IP addresses (including handling proxy headers), request timing, and response
-    status codes for monitoring and debugging purposes.
+    This middleware only logs requests to the /map/generate endpoint. It is designed
+    to be fail-safe - if any part of the logging fails, it will continue processing
+    the request normally. It captures client IP addresses (including handling proxy
+    headers), request timing, and response status codes for monitoring map generation requests.
 
     Arguments:
         request (Request): The incoming HTTP request object containing headers,
@@ -42,33 +42,38 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
     Returns:
         Response: The HTTP response object returned by the next handler in the chain.
     """
-    start_time = time.time()
+    # Check if this is the map generation endpoint
+    is_map_generate = request.url.path == "/map/generate"
+
+    start_time = time.time() if is_map_generate else None
     client_ip = "unknown"
 
-    try:
-        # Get client IP (handles proxies with X-Forwarded-For header)
-        client_ip = request.client.host if request.client else "unknown"
-        if forwarded_for := request.headers.get("X-Forwarded-For"):
-            client_ip = forwarded_for.split(",")[0].strip()
-        elif real_ip := request.headers.get("X-Real-IP"):
-            client_ip = real_ip
-    except Exception:
-        pass
+    if is_map_generate:
+        try:
+            # Get client IP (handles proxies with X-Forwarded-For header)
+            client_ip = request.client.host if request.client else "unknown"
+            if forwarded_for := request.headers.get("X-Forwarded-For"):
+                client_ip = forwarded_for.split(",")[0].strip()
+            elif real_ip := request.headers.get("X-Real-IP"):
+                client_ip = real_ip
+        except Exception:
+            pass
 
     response = await call_next(request)
 
-    try:
-        process_time = time.time() - start_time
-        logger.info(
-            "IP: %s - %s %s - Status: %s - Time: %.3fs",
-            client_ip,
-            request.method,
-            request.url.path,
-            response.status_code,
-            process_time,
-        )
-    except Exception:
-        pass
+    if is_map_generate:
+        try:
+            process_time = time.time() - start_time
+            logger.info(
+                "IP: %s - %s %s - Status: %s - Time: %.3fs",
+                client_ip,
+                request.method,
+                request.url.path,
+                response.status_code,
+                process_time,
+            )
+        except Exception:
+            pass
 
     return response
 
