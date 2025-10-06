@@ -17,6 +17,7 @@ from maps4fsapi.components.task import task_router
 from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
 from maps4fsapi.config import logger, package_version, version_status
+from maps4fsapi.tasks import TasksQueue
 
 # Configure logging to suppress INFO level access logs
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
@@ -61,7 +62,7 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
 
     response = await call_next(request)
 
-    if is_map_generate:
+    if is_map_generate and start_time is not None:
         try:
             process_time = time.time() - start_time
             logger.info(
@@ -108,3 +109,10 @@ async def get_version():
 async def get_version_status():
     """Endpoint to retrieve the version status of the Maps4FS package."""
     return version_status("maps4fs")
+
+
+@app.get("/info/queue_size")
+async def get_queue_size():
+    """Endpoint to retrieve the current size of the tasks queue."""
+    tasks_queue = TasksQueue()
+    return {"queue_size": tasks_queue.tasks.qsize()}
