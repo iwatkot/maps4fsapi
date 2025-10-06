@@ -83,25 +83,25 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
     return response
 
 
-# if is_public:
-#     app.add_middleware(
-#         CORSMiddleware,
-#         allow_origins=[
-#             "https://maps4fs.xyz",
-#             "https://www.maps4fs.xyz",
-#         ],
-#         allow_credentials=True,
-#         allow_methods=["GET", "POST", "OPTIONS"],
-#         allow_headers=["*"],
-#     )
-# else:
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for local deployment
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if is_public:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "https://maps4fs.xyz",
+            "https://www.maps4fs.xyz",
+        ],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Allow all origins for local deployment
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 app.include_router(dtm_router, prefix="/dtm")
 app.include_router(mesh_router, prefix="/mesh")
