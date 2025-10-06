@@ -128,7 +128,7 @@ def validate_api_key(api_key: str) -> bool:
 
     # Check if it's the frontend API key
     if FRONTEND_API_KEY and api_key == FRONTEND_API_KEY:
-        logger.debug("Frontend API key validated.")
+        logger.info("Frontend API key validated.")
         return True
 
     logger.info("Validating API key: %s", "*" * len(api_key))
