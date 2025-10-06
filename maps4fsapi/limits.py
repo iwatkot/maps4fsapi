@@ -131,7 +131,7 @@ def validate_api_key(api_key: str) -> bool:
         logger.debug("Frontend API key validated.")
         return True
 
-    logger.debug("Validating API key: %s", "*" * len(api_key))
+    logger.info("Validating API key: %s", "*" * len(api_key))
     try:
         encoded_id, key_hash = api_key.split(".")
         user_id = decode_user_id(encoded_id)
