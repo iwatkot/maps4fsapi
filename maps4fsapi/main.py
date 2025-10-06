@@ -16,7 +16,7 @@ from maps4fsapi.components.satellite import satellite_router
 from maps4fsapi.components.task import task_router
 from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
-from maps4fsapi.config import logger, package_version, version_status
+from maps4fsapi.config import is_public, logger, package_version, version_status
 from maps4fsapi.tasks import TasksQueue
 
 # Configure logging to suppress INFO level access logs
@@ -65,13 +65,17 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
     if is_map_generate and start_time is not None:
         try:
             process_time = time.time() - start_time
+            origin = request.headers.get("origin", "direct-api-call")
+            user_agent = request.headers.get("user-agent", "unknown")
             logger.info(
-                "IP: %s - %s %s - Status: %s - Time: %.3fs",
+                "IP: %s - Origin: %s - %s %s - Status: %s - Time: %.3fs - UA: %s",
                 client_ip,
+                origin,
                 request.method,
                 request.url.path,
                 response.status_code,
                 process_time,
+                user_agent[:50] + "..." if len(user_agent) > 50 else user_agent,
             )
         except Exception:
             pass
@@ -79,14 +83,25 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
     return response
 
 
-# Add CORS middleware to allow requests from any origin
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for public API
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
-)
+# if is_public:
+#     app.add_middleware(
+#         CORSMiddleware,
+#         allow_origins=[
+#             "https://maps4fs.xyz",
+#             "https://www.maps4fs.xyz",
+#         ],
+#         allow_credentials=True,
+#         allow_methods=["GET", "POST", "OPTIONS"],
+#         allow_headers=["*"],
+#     )
+# else:
+#     app.add_middleware(
+#         CORSMiddleware,
+#         allow_origins=["*"],  # Allow all origins for local deployment
+#         allow_credentials=True,
+#         allow_methods=["*"],
+#         allow_headers=["*"],
+#     )
 
 app.include_router(dtm_router, prefix="/dtm")
 app.include_router(mesh_router, prefix="/mesh")
