@@ -25,6 +25,8 @@ STORAGE_MAX_SIZE = 1000
 PUBLIC_HOSTNAME_KEY = "PUBLIC_HOSTNAME"
 PUBLIC_HOSTNAME_VALUE = "maps4fs"
 
+PUBLIC_QUEUE_LIMIT = 10
+
 
 def check_is_public() -> bool:
     """Check if the script is running on a public server.
