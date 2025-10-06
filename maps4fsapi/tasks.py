@@ -33,9 +33,15 @@ class TasksQueue(metaclass=Singleton):
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
         """
-        logger.debug("Adding task to queue: %s (session: %s)", func.__name__, session_name)
         self.active_sessions.add(session_name)
         self.tasks.put((session_name, func, args, kwargs))
+        queue_size = self.tasks.qsize()
+        logger.info(
+            "Adding task to queue: %s (session: %s), queue size: %d",
+            func.__name__,
+            session_name,
+            queue_size,
+        )
 
     def is_in_queue(self, session_name: str) -> bool:
         """Check if a task with the given session name is currently in queue or being processed.
@@ -65,10 +71,21 @@ class TasksQueue(metaclass=Singleton):
             self.processing_now = session_name
             try:
                 func(*args, **kwargs)
-                logger.debug("Task completed: %s (session: %s)", func.__name__, session_name)
+                remaining_tasks = self.tasks.qsize()
+                logger.info(
+                    "Task completed: %s (session: %s), remaining tasks: %d",
+                    func.__name__,
+                    session_name,
+                    remaining_tasks,
+                )
             except Exception as e:
+                remaining_tasks = self.tasks.qsize()
                 logger.error(
-                    "Task %s (session: %s) failed with error: %s", func.__name__, session_name, e
+                    "Task %s (session: %s) failed with error: %s, remaining tasks: %d",
+                    func.__name__,
+                    session_name,
+                    e,
+                    remaining_tasks,
                 )
                 raise e
             finally:
