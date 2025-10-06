@@ -1,8 +1,10 @@
 """Main entry point for the Maps4FS API application."""
 
 import logging
+import time
+from typing import Callable
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from maps4fsapi.components.dtm import dtm_router
@@ -14,12 +16,62 @@ from maps4fsapi.components.satellite import satellite_router
 from maps4fsapi.components.task import task_router
 from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
-from maps4fsapi.config import package_version, version_status
+from maps4fsapi.config import logger, package_version, version_status
 
 # Configure logging to suppress INFO level access logs
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 app = FastAPI()
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next: Callable) -> Response:
+    """Middleware to log incoming requests with IP addresses.
+
+    This middleware is designed to be fail-safe - if any part of the logging
+    fails, it will continue processing the request normally. It captures client
+    IP addresses (including handling proxy headers), request timing, and response
+    status codes for monitoring and debugging purposes.
+
+    Arguments:
+        request (Request): The incoming HTTP request object containing headers,
+            client information, and request details.
+        call_next (Callable): The next middleware or endpoint handler in the
+            processing chain to be called with the request.
+
+    Returns:
+        Response: The HTTP response object returned by the next handler in the chain.
+    """
+    start_time = time.time()
+    client_ip = "unknown"
+
+    try:
+        # Get client IP (handles proxies with X-Forwarded-For header)
+        client_ip = request.client.host if request.client else "unknown"
+        if forwarded_for := request.headers.get("X-Forwarded-For"):
+            client_ip = forwarded_for.split(",")[0].strip()
+        elif real_ip := request.headers.get("X-Real-IP"):
+            client_ip = real_ip
+    except Exception:
+        pass
+
+    response = await call_next(request)
+
+    try:
+        process_time = time.time() - start_time
+        logger.info(
+            "IP: %s - %s %s - Status: %s - Time: %.3fs",
+            client_ip,
+            request.method,
+            request.url.path,
+            response.status_code,
+            process_time,
+        )
+    except Exception:
+        pass
+
+    return response
+
 
 # Add CORS middleware to allow requests from any origin
 app.add_middleware(
