@@ -134,6 +134,10 @@ def task_generation(
             "is_public": payload.is_public,
             "has_custom_osm": hasattr(payload, "custom_osm_xml")
             and payload.custom_osm_xml is not None,
+            "has_custom_osm_path": hasattr(payload, "custom_osm_path")
+            and payload.custom_osm_path is not None,
+            "has_custom_dem_path": hasattr(payload, "custom_dem_path")
+            and payload.custom_dem_path is not None,
         }
         logger.info("Starting task %s with payload summary: %s", session_name, payload_summary)
         success = True
@@ -196,6 +200,23 @@ def task_generation(
                 custom_osm = save_path
             except Exception as e:
                 logger.error("Failed to convert custom OSM XML: %s", e)
+                raise ValueError(f"Error processing custom OSM data: {e}")
+        elif payload.custom_osm_path:
+            expected_osm_path = os.path.join(mfscfg.MFS_OSM_DEFAULTS_DIR, payload.custom_osm_path)
+            if not os.path.isfile(expected_osm_path):
+                logger.error("Custom OSM path does not exist: %s", expected_osm_path)
+                raise ValueError(f"Custom OSM path does not exist: {expected_osm_path}")
+            logger.info("Using custom OSM file from path: %s", expected_osm_path)
+            custom_osm = expected_osm_path
+
+        custom_background_path = None
+        if payload.custom_dem_path:
+            expected_dem_path = os.path.join(mfscfg.MFS_DEM_DEFAULTS_DIR, payload.custom_dem_path)
+            if not os.path.isfile(expected_dem_path):
+                logger.error("Custom DEM path does not exist: %s", expected_dem_path)
+                raise ValueError(f"Custom DEM path does not exist: {expected_dem_path}")
+            logger.info("Using custom DEM file from path: %s", expected_dem_path)
+            custom_background_path = expected_dem_path
 
         mp = mfs.Map(
             game,
@@ -209,6 +230,7 @@ def task_generation(
             custom_osm=custom_osm,
             is_public=payload.is_public,
             output_size=payload.output_size,
+            custom_background_path=custom_background_path,
         )
 
         if is_public:

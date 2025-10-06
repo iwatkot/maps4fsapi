@@ -25,3 +25,4 @@ tasks/
 *.env
 mfsrootdir/
 templates/
+defaults/

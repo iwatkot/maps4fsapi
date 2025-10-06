@@ -48,6 +48,8 @@ class MainSettingsPayload(GameCodePayload):
     output_size: int | None = None
     # Custom OSM is a JSON string representing OSM data in XML format.
     custom_osm_xml: str | None = None
+    custom_osm_path: str | None = None
+    custom_dem_path: str | None = None
     is_public: bool = False
     # DTM Settings may be required for some DTM providers.
     dtm_settings: dict | None = None
