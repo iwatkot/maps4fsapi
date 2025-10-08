@@ -103,31 +103,28 @@ class TasksQueue(metaclass=Singleton):
         )
         try:
             func(*args, **kwargs)
-            processing_count = len(self.processing_now) - 1  # About to remove this one
-            total_active = len(self.active_sessions) - 1  # About to remove this one
-            logger.info(
-                "Task completed: %s (session: %s), processing: %d, total active: %d",
-                func.__name__,
-                session_name,
-                processing_count,
-                total_active,
-            )
         except Exception as e:
-            processing_count = len(self.processing_now) - 1  # About to remove this one
-            total_active = len(self.active_sessions) - 1  # About to remove this one
             logger.error(
-                "Task %s (session: %s) failed with error: %s, processing: %d, total active: %d",
+                "Task %s (session: %s) failed with error: %s",
                 func.__name__,
                 session_name,
                 e,
-                processing_count,
-                total_active,
             )
             # Note: We don't re-raise here since it would crash the thread
         finally:
             # Remove session from active sets when task completes or fails
             self.processing_now.discard(session_name)
             self.active_sessions.discard(session_name)
+            # Calculate counts after removal for accuracy
+            processing_count = len(self.processing_now)
+            total_active = len(self.active_sessions)
+            logger.info(
+                "Task finished: %s (session: %s), processing: %d, total active: %d",
+                func.__name__,
+                session_name,
+                processing_count,
+                total_active,
+            )
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
