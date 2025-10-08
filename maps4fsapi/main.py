@@ -130,6 +130,5 @@ async def get_version_status():
 
 @app.get("/info/queue_size")
 async def get_queue_size():
-    """Endpoint to retrieve the current size of the tasks queue."""
-    tasks_queue = TasksQueue()
-    return {"queue_size": tasks_queue.tasks.qsize()}
+    """Endpoint to retrieve the current number of active tasks (queued + processing)."""
+    return {"queue_size": TasksQueue().get_active_tasks_count()}

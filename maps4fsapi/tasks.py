@@ -43,12 +43,14 @@ class TasksQueue(metaclass=Singleton):
         """
         self.active_sessions.add(session_name)
         self.tasks.put((session_name, func, args, kwargs))
-        queue_size = self.tasks.qsize()
+        processing_count = len(self.processing_now)
+        total_active = len(self.active_sessions)
         logger.info(
-            "Adding task to queue: %s (session: %s), queue size: %d",
+            "Adding task to queue: %s (session: %s), processing: %d, total active: %d",
             func.__name__,
             session_name,
-            queue_size,
+            processing_count,
+            total_active,
         )
 
     def is_in_queue(self, session_name: str) -> bool:
@@ -73,6 +75,14 @@ class TasksQueue(metaclass=Singleton):
         """
         return session_name in self.processing_now
 
+    def get_active_tasks_count(self) -> int:
+        """Get the total number of active tasks (queued + processing).
+
+        Returns:
+            int: The total number of active tasks.
+        """
+        return len(self.active_sessions)
+
     def _worker(self):
         while True:
             session_name, func, args, kwargs = self.tasks.get()
@@ -82,12 +92,36 @@ class TasksQueue(metaclass=Singleton):
     def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
         """Execute a single task in the thread pool."""
         self.processing_now.add(session_name)
+        processing_count = len(self.processing_now)
+        total_active = len(self.active_sessions)
+        logger.info(
+            "Task started: %s (session: %s), processing: %d, total active: %d",
+            func.__name__,
+            session_name,
+            processing_count,
+            total_active,
+        )
         try:
             func(*args, **kwargs)
-            logger.debug("Task completed: %s (session: %s)", func.__name__, session_name)
+            processing_count = len(self.processing_now) - 1  # About to remove this one
+            total_active = len(self.active_sessions) - 1  # About to remove this one
+            logger.info(
+                "Task completed: %s (session: %s), processing: %d, total active: %d",
+                func.__name__,
+                session_name,
+                processing_count,
+                total_active,
+            )
         except Exception as e:
+            processing_count = len(self.processing_now) - 1  # About to remove this one
+            total_active = len(self.active_sessions) - 1  # About to remove this one
             logger.error(
-                "Task %s (session: %s) failed with error: %s", func.__name__, session_name, e
+                "Task %s (session: %s) failed with error: %s, processing: %d, total active: %d",
+                func.__name__,
+                session_name,
+                e,
+                processing_count,
+                total_active,
             )
             # Note: We don't re-raise here since it would crash the thread
         finally:
