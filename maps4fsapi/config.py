@@ -37,12 +37,13 @@ if not USERPROFILE:
 else:
     USERPROFILE = USERPROFILE.replace("\\", "/")
 
-MAX_PARALLEL_TASKS = os.getenv("MAX_PARALLEL_TASKS", 2)
+MAX_PARALLEL_TASKS_STR = os.getenv("MAX_PARALLEL_TASKS", "1")
 try:
-    MAX_PARALLEL_TASKS = int(MAX_PARALLEL_TASKS)
+    MAX_PARALLEL_TASKS = int(MAX_PARALLEL_TASKS_STR)
 except ValueError:
     logger.warning(
-        "Invalid MAX_PARALLEL_TASKS value: %s. Falling back to default of 1.", MAX_PARALLEL_TASKS
+        "Invalid MAX_PARALLEL_TASKS value: %s. Falling back to default of 1.",
+        MAX_PARALLEL_TASKS_STR,
     )
     MAX_PARALLEL_TASKS = 1
 
