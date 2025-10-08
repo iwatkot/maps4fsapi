@@ -14,7 +14,10 @@ def is_upgradable() -> dict[str, bool]:
     """Check if the server can be upgraded.
 
     Returns:
-        bool: True if the server is upgradable, False otherwise.
+        dict[str, bool]: True if the server is upgradable, False otherwise.
+
+    Raises:
+        HTTPException: If the server is public, USERPROFILE is not set, or Docker is not available.
     """
     if is_public:
         raise HTTPException(status_code=403, detail="Upgrade not allowed on public server.")
@@ -38,7 +41,10 @@ def is_upgradable() -> dict[str, bool]:
 
 
 def run_upgrader():
-    """Background task to run the upgrader container."""
+    """Background task to run the upgrader container.
+
+    Launches the Docker container to perform the upgrade.
+    """
     try:
         client = docker.from_env()
         container = client.containers.run(
@@ -57,12 +63,11 @@ def upgrade_server(background_tasks: BackgroundTasks):
     """Upgrade the server by running the upgrader Docker container.
 
     The upgrade process runs in the background after responding to the client.
-    """
-    try:
-        res = is_upgradable()
-    except HTTPException as e:
-        raise e
 
+    Raises:
+        HTTPException: If the server is not upgradable.
+    """
+    res = is_upgradable()
     if not res.get("upgradable", False):
         raise HTTPException(
             status_code=500, detail="Server is not upgradable for an unknown reason."
