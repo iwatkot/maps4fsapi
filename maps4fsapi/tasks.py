@@ -87,7 +87,6 @@ class TasksQueue(metaclass=Singleton):
         while True:
             session_name, func, args, kwargs = self.tasks.get()
             self.executor.submit(self._execute_task, session_name, func, args, kwargs)
-            self.tasks.task_done()
 
     def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
         """Execute a single task in the thread pool."""
@@ -109,8 +108,8 @@ class TasksQueue(metaclass=Singleton):
                 func.__name__,
                 session_name,
                 e,
+                exc_info=True,  # Include full traceback for debugging
             )
-            # Note: We don't re-raise here since it would crash the thread
         finally:
             # Remove session from active sets when task completes or fails
             self.processing_now.discard(session_name)
@@ -125,6 +124,8 @@ class TasksQueue(metaclass=Singleton):
                 processing_count,
                 total_active,
             )
+            # Call task_done() here after the task is actually completed
+            self.tasks.task_done()
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
