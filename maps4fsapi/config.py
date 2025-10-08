@@ -34,6 +34,8 @@ if not USERPROFILE:
         "will not work. "
         "To use the Upgrade feature, set USERPROFILE to your home directory."
     )
+else:
+    USERPROFILE = USERPROFILE.replace("\\", "/")
 
 
 def check_is_public() -> bool:

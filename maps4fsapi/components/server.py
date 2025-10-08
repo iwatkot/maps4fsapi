@@ -43,17 +43,49 @@ def is_upgradable() -> dict[str, bool]:
 def run_upgrader():
     """Background task to run the upgrader container.
 
-    Launches the Docker container to perform the upgrade.
+    Launches the Docker container to perform the upgrade. Handles cleanup of existing
+    containers and images before running the new upgrader.
     """
     try:
         client = docker.from_env()
+
+        try:
+            existing_container = client.containers.get("maps4fsupgrader")
+            logger.info("Found existing maps4fsupgrader container, stopping it...")
+            existing_container.stop(timeout=10)
+            logger.info("Stopped existing maps4fsupgrader container")
+        except docker.errors.NotFound:
+            logger.debug("No existing maps4fsupgrader container found")
+        except Exception as e:
+            logger.warning("Failed to stop existing container: %s", e)
+
+        try:
+            existing_container = client.containers.get("maps4fsupgrader")
+            existing_container.remove(force=True)
+            logger.info("Removed existing maps4fsupgrader container")
+        except docker.errors.NotFound:
+            logger.debug("No existing maps4fsupgrader container to remove")
+        except Exception as e:
+            logger.warning("Failed to remove existing container: %s", e)
+
+        try:
+            client.images.remove("iwatkot/maps4fsupgrader:latest", force=True)
+            logger.info("Removed existing iwatkot/maps4fsupgrader image")
+        except docker.errors.ImageNotFound:
+            logger.debug("No existing iwatkot/maps4fsupgrader image to remove")
+        except Exception as e:
+            logger.warning("Failed to remove existing image: %s", e)
+
         container = client.containers.run(
             "iwatkot/maps4fsupgrader:latest",
+            name="maps4fsupgrader",
             detach=True,
+            auto_remove=True,
             environment={"USERPROFILE": USERPROFILE},
             volumes={"/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"}},
         )
         logger.info("Launched upgrader container with ID: %s", container.id)
+
     except Exception as e:
         logger.error("Failed to launch upgrader container: %s", e)
 
