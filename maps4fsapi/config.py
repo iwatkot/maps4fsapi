@@ -27,6 +27,16 @@ PUBLIC_HOSTNAME_VALUE = "maps4fs"
 
 PUBLIC_QUEUE_LIMIT = 10
 
+USERPROFILE = os.getenv("USERPROFILE")
+if not USERPROFILE:
+    logger.warning(
+        "USERPROFILE environment variable is not set. The Upgrade feature "
+        "will not work. "
+        "To use the Upgrade feature, set USERPROFILE to your home directory."
+    )
+else:
+    USERPROFILE = USERPROFILE.replace("\\", "/")
+
 
 def check_is_public() -> bool:
     """Check if the script is running on a public server.

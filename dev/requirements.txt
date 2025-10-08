@@ -7,3 +7,5 @@ mypy
 types-cachetools
 slowapi
 python-dotenv
+docker
+types-docker

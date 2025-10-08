@@ -1,6 +1,6 @@
 uvicorn
 fastapi
-maps4fs
+git+https://github.com/iwatkot/maps4fs.git
 cachetools
 slowapi
 python-dotenv
