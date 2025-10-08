@@ -37,6 +37,15 @@ if not USERPROFILE:
 else:
     USERPROFILE = USERPROFILE.replace("\\", "/")
 
+MAX_PARALLEL_TASKS = os.getenv("MAX_PARALLEL_TASKS", 2)
+try:
+    MAX_PARALLEL_TASKS = int(MAX_PARALLEL_TASKS)
+except ValueError:
+    logger.warning(
+        "Invalid MAX_PARALLEL_TASKS value: %s. Falling back to default of 1.", MAX_PARALLEL_TASKS
+    )
+    MAX_PARALLEL_TASKS = 1
+
 
 def check_is_public() -> bool:
     """Check if the script is running on a public server.

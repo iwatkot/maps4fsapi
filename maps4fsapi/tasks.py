@@ -4,13 +4,20 @@ import os
 import queue
 import threading
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
 import maps4fs as mfs
 import maps4fs.generator.config as mfscfg
 
 from maps4fsapi.components.models import MainSettingsPayload
-from maps4fsapi.config import MFS_CUSTOM_OSM_DIR, Singleton, is_public, logger
+from maps4fsapi.config import (
+    MAX_PARALLEL_TASKS,
+    MFS_CUSTOM_OSM_DIR,
+    Singleton,
+    is_public,
+    logger,
+)
 from maps4fsapi.storage import Storage, StorageEntry
 
 
@@ -20,7 +27,8 @@ class TasksQueue(metaclass=Singleton):
     def __init__(self):
         self.tasks = queue.Queue()
         self.active_sessions = set()  # Track session names currently in queue or processing
-        self.processing_now = None
+        self.processing_now = set()  # Track multiple sessions being processed
+        self.executor = ThreadPoolExecutor(max_workers=MAX_PARALLEL_TASKS)
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
@@ -63,36 +71,29 @@ class TasksQueue(metaclass=Singleton):
         Returns:
             bool: True if session is currently being processed, False otherwise.
         """
-        return session_name == self.processing_now
+        return session_name in self.processing_now
 
     def _worker(self):
         while True:
             session_name, func, args, kwargs = self.tasks.get()
-            self.processing_now = session_name
-            try:
-                func(*args, **kwargs)
-                remaining_tasks = self.tasks.qsize()
-                logger.info(
-                    "Task completed: %s (session: %s), remaining tasks: %d",
-                    func.__name__,
-                    session_name,
-                    remaining_tasks,
-                )
-            except Exception as e:
-                remaining_tasks = self.tasks.qsize()
-                logger.error(
-                    "Task %s (session: %s) failed with error: %s, remaining tasks: %d",
-                    func.__name__,
-                    session_name,
-                    e,
-                    remaining_tasks,
-                )
-                raise e
-            finally:
-                # Remove session from active set when task completes or fails
-                self.active_sessions.discard(session_name)
-                self.tasks.task_done()
-                self.processing_now = None
+            self.executor.submit(self._execute_task, session_name, func, args, kwargs)
+            self.tasks.task_done()
+
+    def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
+        """Execute a single task in the thread pool."""
+        self.processing_now.add(session_name)
+        try:
+            func(*args, **kwargs)
+            logger.debug("Task completed: %s (session: %s)", func.__name__, session_name)
+        except Exception as e:
+            logger.error(
+                "Task %s (session: %s) failed with error: %s", func.__name__, session_name, e
+            )
+            # Note: We don't re-raise here since it would crash the thread
+        finally:
+            # Remove session from active sets when task completes or fails
+            self.processing_now.discard(session_name)
+            self.active_sessions.discard(session_name)
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
