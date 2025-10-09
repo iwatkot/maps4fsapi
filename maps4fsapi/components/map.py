@@ -28,8 +28,8 @@ def map_generation(
         HTTPException: If the server is under high demand and cannot accept new tasks.
     """
     if is_public:
-        queue_size = TasksQueue().tasks.qsize()
-        if queue_size >= PUBLIC_QUEUE_LIMIT:
+        active_tasks_count = TasksQueue().get_active_tasks_count()
+        if active_tasks_count >= PUBLIC_QUEUE_LIMIT:
             raise HTTPException(
                 status_code=429,
                 detail="The server is currently experiencing high demand. Please try again later.",
