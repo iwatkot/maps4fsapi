@@ -83,13 +83,21 @@ class TasksQueue(metaclass=Singleton):
         """
         return len(self.active_sessions)
 
-    def _worker(self):
+    def _worker(self) -> None:
+        """Worker method that continuously processes tasks from the queue."""
         while True:
             session_name, func, args, kwargs = self.tasks.get()
             self.executor.submit(self._execute_task, session_name, func, args, kwargs)
 
-    def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
-        """Execute a single task in the thread pool."""
+    def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict) -> None:
+        """Execute a single task in the thread pool.
+
+        Arguments:
+            session_name (str): Unique session identifier for the task.
+            func (Callable): The function to be executed as a task.
+            args (tuple): Positional arguments to pass to the function.
+            kwargs (dict): Keyword arguments to pass to the function.
+        """
         self.processing_now.add(session_name)
         processing_count = len(self.processing_now)
         total_active = len(self.active_sessions)
