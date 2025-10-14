@@ -384,6 +384,7 @@ def adjust_settings_for_public(mp: mfs.Map) -> None:
     """
     mp.satellite_settings.zoom_level = min(mp.satellite_settings.zoom_level, 16)
     mp.texture_settings.dissolve = False
+    mp.background_settings.flatten_roads = False
 
     logger.debug("Adjusted map settings for public access.")
 
