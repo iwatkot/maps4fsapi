@@ -14,6 +14,7 @@ from maps4fsapi.components.models import MainSettingsPayload
 from maps4fsapi.config import (
     MAX_PARALLEL_TASKS,
     MFS_CUSTOM_OSM_DIR,
+    PUBLIC_MAX_MAP_SIZE,
     Singleton,
     is_public,
     logger,
@@ -295,13 +296,14 @@ def task_generation(
             logger.info("Running in public mode, will adjust map settings accordingly.")
             adjust_settings_for_public(mp)
 
-            if mp.size > 4096:
+            if mp.size > PUBLIC_MAX_MAP_SIZE:
                 logger.warning(
-                    "Map size %s is larger than 4096, will stop generation to prevent issues.",
+                    "Map size %s is larger than %s, will stop generation to prevent issues.",
                     mp.size,
+                    PUBLIC_MAX_MAP_SIZE,
                 )
                 raise ValueError(
-                    "Map size exceeds the maximum allowed size for public access (4096)."
+                    f"Map size exceeds the maximum allowed size for public access {PUBLIC_MAX_MAP_SIZE}."
                 )
 
         for _ in mp.generate():
