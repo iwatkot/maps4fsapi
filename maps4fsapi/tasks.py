@@ -1,11 +1,12 @@
 """This module provides functionality for managing tasks related to map generation."""
 
+import json
 import os
 import queue
 import threading
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable
+from typing import Any, Callable, Literal
 
 import maps4fs as mfs
 import maps4fs.generator.config as mfscfg
@@ -197,6 +198,9 @@ def task_generation(
             and payload.custom_osm_path is not None,
             "has_custom_dem_path": hasattr(payload, "custom_dem_path")
             and payload.custom_dem_path is not None,
+            "custom_texture_schema_path": payload.custom_texture_schema_path,
+            "custom_tree_schema_path": payload.custom_tree_schema_path,
+            "custom_map_template_path": payload.custom_map_template_path,
         }
         logger.info("Starting task %s with payload summary: %s", session_name, payload_summary)
         success = True
@@ -277,6 +281,34 @@ def task_generation(
             logger.info("Using custom DEM file from path: %s", expected_dem_path)
             custom_background_path = expected_dem_path
 
+        texture_custom_schema = None
+        tree_custom_schema = None
+        if payload.custom_texture_schema_path:
+            texture_custom_schema = load_custom_schemas(
+                payload.game_code, "texture", payload.custom_texture_schema_path
+            )
+            logger.info("Loaded custom texture schema from: %s", payload.custom_texture_schema_path)
+        if payload.custom_tree_schema_path:
+            tree_custom_schema = load_custom_schemas(
+                payload.game_code, "tree", payload.custom_tree_schema_path
+            )
+            logger.info("Loaded custom tree schema from: %s", payload.custom_tree_schema_path)
+
+        custom_template_path = None
+        if payload.custom_map_template_path:
+            full_template_path = os.path.join(
+                mfscfg.MFS_TEMPLATES_DIR,
+                payload.game_code,
+                "map_templates",
+                payload.custom_map_template_path,
+            )
+            logger.info("Using custom map template from path: %s", full_template_path)
+            if not os.path.isfile(full_template_path):
+                logger.error("Custom map template path does not exist: %s", full_template_path)
+                raise ValueError(f"Custom map template path does not exist: {full_template_path}")
+
+            custom_template_path = full_template_path
+
         mp = mfs.Map(
             game,
             dtm_provider,
@@ -290,6 +322,9 @@ def task_generation(
             is_public=payload.is_public,
             output_size=payload.output_size,
             custom_background_path=custom_background_path,
+            texture_custom_schema=texture_custom_schema,
+            tree_custom_schema=tree_custom_schema,
+            custom_template_path=custom_template_path,
         )
 
         if is_public:
@@ -361,6 +396,51 @@ def task_generation(
         )
 
     Storage().add_entry(session_name, storage_entry)
+
+
+def load_custom_schemas(
+    game_code: str, schema_type: Literal["texture", "tree"], file_name: str
+) -> list[dict[str, Any]]:
+    """Loads custom texture or tree schemas from a specified file.
+    Arguments:
+        game_code (str): The game code.
+        schema_type (Literal["texture", "tree"]): The type of schema to load.
+        file_name (str): The name of the schema file to load.
+
+    Raises:
+        ValueError: If the schema file does not exist, is empty, or is not a valid list.
+
+    Returns:
+        list[dict[str, Any]]: The loaded schema data.
+    """
+    schema_dirs = {
+        "texture": "texture_schemas",
+        "tree": "tree_schemas",
+    }
+    file_path = os.path.join(
+        mfscfg.MFS_TEMPLATES_DIR, game_code, schema_dirs[schema_type], file_name
+    )
+    if not os.path.isfile(file_path):
+        logger.error("Custom %s schema file does not exist: %s", schema_type, file_path)
+        raise ValueError(f"Custom {schema_type} schema file does not exist: {file_path}")
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            schema_data = json.load(f)
+        logger.debug("Successfully loaded custom %s schema from: %s", schema_type, file_path)
+    except Exception as e:
+        logger.error("Failed to load custom %s schema from file: %s", schema_type, e)
+        raise ValueError(f"Error loading {schema_type} schema: {e}")
+
+    if not schema_data:
+        logger.error("Custom %s schema file is empty: %s", schema_type, file_path)
+        raise ValueError(f"Custom {schema_type} schema file is empty: {file_path}")
+
+    if not isinstance(schema_data, list):
+        logger.error("Custom %s schema file is not a valid list: %s", schema_type, file_path)
+        raise ValueError(f"Custom {schema_type} schema file is not a valid list: {file_path}")
+
+    return schema_data
 
 
 def files_to_archive(filepaths: list[str], archive_path: str) -> None:
