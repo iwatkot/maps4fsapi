@@ -54,6 +54,10 @@ class MainSettingsPayload(GameCodePayload):
     # DTM Settings may be required for some DTM providers.
     dtm_settings: dict | None = None
 
+    custom_texture_schema_path: str | None = None
+    custom_tree_schema_path: str | None = None
+    custom_map_template_path: str | None = None
+
 
 class DEMSettingsPayload(MainSettingsPayload):
     """Payload model for DEM settings, extending MainSettingsPayload."""
