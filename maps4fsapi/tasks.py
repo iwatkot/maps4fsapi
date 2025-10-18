@@ -341,7 +341,7 @@ def task_generation(
                     f"Map size exceeds the maximum allowed size for public access {PUBLIC_MAX_MAP_SIZE}."
                 )
 
-            if mp.output_size > PUBLIC_MAX_MAP_SIZE:
+            if mp.output_size is not None and mp.output_size > PUBLIC_MAX_MAP_SIZE:
                 logger.warning(
                     "Output size %s is larger than %s, will stop generation to prevent issues.",
                     mp.output_size,
