@@ -13,7 +13,7 @@ from packaging import version
 logger = mfs.Logger(level="INFO")
 
 # region Public Limits
-PUBLIC_MAX_MAP_SIZE = 16384
+PUBLIC_MAX_MAP_SIZE = 8192
 # endregion
 
 MFS_CUSTOM_OSM_DIR = os.path.join(mfscfg.MFS_ROOT_DIR, "custom_osm")
