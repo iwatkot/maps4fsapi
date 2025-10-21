@@ -102,7 +102,7 @@ class TasksQueue(metaclass=Singleton):
                     e,
                     remaining_tasks,
                 )
-                raise e
+                raise
             finally:
                 # Remove session from active set when task completes or fails
                 self.active_sessions.discard(session_name)
