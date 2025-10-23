@@ -1,9 +1,15 @@
 """Maps4FS API Models used to validate and structure data for various endpoints."""
 
-from typing import Literal
+from typing import Any, Literal
 
 import maps4fs as mfs
 from pydantic import BaseModel
+
+
+class UserSurveyPayload(BaseModel):
+    """Payload model for user survey responses."""
+
+    results: dict[str, Any]
 
 
 class LatLonPayload(BaseModel):
