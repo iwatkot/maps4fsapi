@@ -1,6 +1,10 @@
 """Generate GRLE data for the given payload."""
 
+import os
+
+import maps4fs.generator.config as mfscfg
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
 
 from maps4fsapi.components.models import MapGenerationPayload
 from maps4fsapi.config import PUBLIC_QUEUE_LIMIT, is_public
@@ -52,3 +56,36 @@ def map_generation(
         "description": "Task has been added to the queue. Use the task ID to retrieve the result.",
         "task_id": task_id,
     }
+
+
+@map_router.get("/download/{task_id}")
+def download_map(task_id: str) -> FileResponse:
+    """Download the generated map file for the given task ID.
+    This endpoint can be used outside of the UI to directly download the map.
+
+    Arguments:
+        task_id (str): The unique identifier for the map generation task.
+
+    Returns:
+        FileResponse: The response containing the map file for download.
+
+    Raises:
+        HTTPException: If the map file is not found for the given task ID.
+    """
+    archive_name = f"{task_id}.zip"
+    archive_file_path = os.path.join(mfscfg.MFS_DATA_DIR, archive_name)
+    if not os.path.isfile(archive_file_path):
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "The requested map file was not found. If the task ID is correct, "
+                "it can be that the task is still processing, was already removed "
+                "from the server, or it's been an error during generation."
+            ),
+        )
+
+    return FileResponse(
+        archive_file_path,
+        media_type="application/octet-stream",
+        filename=os.path.basename(archive_file_path),
+    )
