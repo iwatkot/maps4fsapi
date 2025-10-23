@@ -72,9 +72,21 @@ def download_map(task_id: str) -> FileResponse:
     Raises:
         HTTPException: If the map file is not found for the given task ID.
     """
+    if not task_id or ".." in task_id or "/" in task_id or "\\" in task_id:
+        raise HTTPException(status_code=400, detail="Invalid task ID format.")
+
     archive_name = f"{task_id}.zip"
     archive_file_path = os.path.join(mfscfg.MFS_DATA_DIR, archive_name)
-    if not os.path.isfile(archive_file_path):
+
+    # Resolve absolute paths and ensure the file is within the allowed directory
+    data_dir_abs = os.path.abspath(mfscfg.MFS_DATA_DIR)
+    archive_file_abs = os.path.abspath(archive_file_path)
+
+    # Check if the resolved path is within the data directory
+    if not os.path.commonpath([data_dir_abs, archive_file_abs]) == data_dir_abs:
+        raise HTTPException(status_code=400, detail="Invalid file path.")
+
+    if not os.path.isfile(archive_file_abs):
         raise HTTPException(
             status_code=404,
             detail=(
@@ -85,7 +97,7 @@ def download_map(task_id: str) -> FileResponse:
         )
 
     return FileResponse(
-        archive_file_path,
+        archive_file_abs,
         media_type="application/octet-stream",
-        filename=os.path.basename(archive_file_path),
+        filename=os.path.basename(archive_file_abs),
     )
