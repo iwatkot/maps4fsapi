@@ -11,10 +11,10 @@ from maps4fsapi.config import PUBLIC_QUEUE_LIMIT, is_public
 from maps4fsapi.limits import HIGH_DEMAND_PUBLIC_LIMIT, dependencies, public_limiter
 from maps4fsapi.tasks import TasksQueue, get_session_name_from_payload, task_generation
 
-map_router = APIRouter(dependencies=dependencies)
+map_router = APIRouter()
 
 
-@map_router.post("/generate")
+@map_router.post("/generate", dependencies=dependencies)
 @public_limiter(HIGH_DEMAND_PUBLIC_LIMIT)
 def map_generation(
     payload: MapGenerationPayload,
