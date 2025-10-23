@@ -17,6 +17,7 @@ from maps4fsapi.components.server import server_router
 from maps4fsapi.components.task import task_router
 from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
+from maps4fsapi.components.users import users_router
 from maps4fsapi.config import is_public, logger, package_version, version_status
 from maps4fsapi.tasks import TasksQueue
 
@@ -114,6 +115,7 @@ app.include_router(map_router, prefix="/map")
 app.include_router(satellite_router, prefix="/satellite")
 app.include_router(templates_router, prefix="/templates")
 app.include_router(server_router, prefix="/server")
+app.include_router(users_router, prefix="/users")
 
 
 @app.get("/info/version")
