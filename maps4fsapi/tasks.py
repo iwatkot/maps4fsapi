@@ -108,7 +108,7 @@ class TasksQueue(metaclass=Singleton):
         while True:
             # Only submit if we have available executor capacity
             if len(self.processing_now) < MAX_PARALLEL_TASKS:
-                priority, session_name, func, args, kwargs = self.tasks.get()
+                _, session_name, func, args, kwargs = self.tasks.get()
                 self.executor.submit(self._execute_task, session_name, func, args, kwargs)
                 self.tasks.task_done()
             else:
