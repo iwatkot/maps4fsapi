@@ -116,7 +116,6 @@ class TasksQueue(metaclass=Singleton):
 
             # Submit task to executor
             self.executor.submit(self._execute_task, session_name, func, args, kwargs)
-            self.tasks.task_done()
 
     def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
         """Execute a single task in the thread pool."""
@@ -145,6 +144,8 @@ class TasksQueue(metaclass=Singleton):
             # Remove session from active sets when task completes or fails
             self.processing_now.discard(session_name)
             self.active_sessions.discard(session_name)
+            # Mark task as done in the queue
+            self.tasks.task_done()
             # Calculate counts after removal for accuracy
             processing_count = len(self.processing_now)
             total_active = len(self.active_sessions)
