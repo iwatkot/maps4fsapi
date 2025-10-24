@@ -46,7 +46,7 @@ try:
     MAX_PARALLEL_TASKS = int(MAX_PARALLEL_TASKS_STR)
 except ValueError:
     logger.warning(
-        "Invalid MAX_PARALLEL_TASKS value: %s. Falling back to default of 2.",
+        "Invalid MAX_PARALLEL_TASKS value: %s. Falling back to default of 1.",
         MAX_PARALLEL_TASKS_STR,
     )
     MAX_PARALLEL_TASKS = 1

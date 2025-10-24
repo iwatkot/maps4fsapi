@@ -33,6 +33,7 @@ class TasksQueue(metaclass=Singleton):
         self.executor = ThreadPoolExecutor(max_workers=MAX_PARALLEL_TASKS)
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
+        self._task_counter = 0  # Counter for FIFO tie-breaking
 
     def add_task(self, session_name: str, func: Callable, *args, **kwargs):
         """Adds a task to the priority queue with size-based prioritization.
@@ -44,25 +45,31 @@ class TasksQueue(metaclass=Singleton):
             **kwargs: Keyword arguments to pass to the function.
         """
         # Extract priority from payload (smaller sizes get higher priority)
-        priority = 999999  # Default priority for tasks without payload
+        base_priority = 999999  # Default priority for tasks without payload
 
         # Check if the second argument is a MainSettingsPayload with size attribute
         if len(args) >= 2 and hasattr(args[1], "size") and isinstance(args[1].size, int):
             payload = args[1]
-            priority = payload.size  # Smaller sizes = higher priority in PriorityQueue
+            base_priority = payload.size  # Smaller sizes = higher priority in PriorityQueue
 
         self.active_sessions.add(session_name)
-        # PriorityQueue uses (priority, item) tuples
-        self.tasks.put((priority, session_name, func, args, kwargs))
+
+        # Add counter to priority for FIFO ordering of equal base priorities
+        self._task_counter += 1
+        final_priority = base_priority + self._task_counter  # Integer addition for FIFO
+
+        # PriorityQueue uses (priority, session_name, func, args, kwargs) tuples
+        self.tasks.put((final_priority, session_name, func, args, kwargs))
 
         processing_count = len(self.processing_now)
         total_active = len(self.active_sessions)
 
         logger.info(
-            "Adding task to queue: %s (session: %s), priority: %d, processing: %d, total active: %d",
+            "Adding task to queue: %s (session: %s), base_priority: %d, final_priority: %d, processing: %d, total active: %d",
             func.__name__,
             session_name,
-            priority,
+            base_priority,
+            final_priority,
             processing_count,
             total_active,
         )
@@ -99,9 +106,16 @@ class TasksQueue(metaclass=Singleton):
 
     def _worker(self):
         while True:
-            _, session_name, func, args, kwargs = self.tasks.get()
-            self.executor.submit(self._execute_task, session_name, func, args, kwargs)
-            self.tasks.task_done()
+            # Only submit if we have available executor capacity
+            if len(self.processing_now) < MAX_PARALLEL_TASKS:
+                priority, session_name, func, args, kwargs = self.tasks.get()
+                self.executor.submit(self._execute_task, session_name, func, args, kwargs)
+                self.tasks.task_done()
+            else:
+                # Wait a bit before checking again if executor has capacity
+                import time
+
+                time.sleep(1)
 
     def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
         """Execute a single task in the thread pool."""
@@ -134,11 +148,12 @@ class TasksQueue(metaclass=Singleton):
             processing_count = len(self.processing_now)
             total_active = len(self.active_sessions)
             logger.info(
-                "Task finished: %s (session: %s), processing: %d, total active: %d",
+                "Task finished: %s (session: %s), processing: %d, total active: %d. Processed total: %d",
                 func.__name__,
                 session_name,
                 processing_count,
                 total_active,
+                self._task_counter,
             )
 
 
