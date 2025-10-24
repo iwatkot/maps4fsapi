@@ -1,10 +1,13 @@
 """This module provides functionality for managing tasks related to map generation."""
 
+import itertools
 import json
 import os
 import queue
 import threading
+import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Literal
 
 import maps4fs as mfs
@@ -12,6 +15,7 @@ import maps4fs.generator.config as mfscfg
 
 from maps4fsapi.components.models import MainSettingsPayload
 from maps4fsapi.config import (
+    MAX_PARALLEL_TASKS,
     MFS_CUSTOM_OSM_DIR,
     PUBLIC_MAX_MAP_SIZE,
     Singleton,
@@ -22,17 +26,19 @@ from maps4fsapi.storage import Storage, StorageEntry
 
 
 class TasksQueue(metaclass=Singleton):
-    """A singleton class that manages a queue of tasks for map generation."""
+    """A singleton class that manages a queue of tasks for map generation with size-based prioritization."""
 
     def __init__(self):
-        self.tasks = queue.Queue()
+        self.tasks = queue.PriorityQueue()  # Use priority queue for size-based ordering
         self.active_sessions = set()  # Track session names currently in queue or processing
-        self.processing_now = None
+        self.processing_now = set()  # Track multiple sessions being processed
+        self.executor = ThreadPoolExecutor(max_workers=MAX_PARALLEL_TASKS)
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
+        self._task_counter = itertools.count()  # Thread-safe counter for FIFO tie-breaking
 
     def add_task(self, session_name: str, func: Callable, *args, **kwargs):
-        """Adds a task to the queue with a session name identifier.
+        """Adds a task to the priority queue with size-based prioritization.
 
         Arguments:
             session_name (str): Unique session identifier for the task.
@@ -40,14 +46,35 @@ class TasksQueue(metaclass=Singleton):
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
         """
+        # Extract priority from payload (smaller sizes get higher priority)
+        base_priority = 999999  # Default priority for tasks without payload
+
+        # Check if the second argument is a MainSettingsPayload with size attribute
+        if len(args) >= 2 and hasattr(args[1], "size") and isinstance(args[1].size, int):
+            payload = args[1]
+            base_priority = payload.size  # Smaller sizes = higher priority in PriorityQueue
+
         self.active_sessions.add(session_name)
-        self.tasks.put((session_name, func, args, kwargs))
-        queue_size = self.tasks.qsize()
+
+        # Add counter to priority for FIFO ordering of equal base priorities
+        task_sequence = next(self._task_counter)
+        final_priority = base_priority + task_sequence  # Integer addition for FIFO
+
+        # PriorityQueue uses (priority, session_name, func, args, kwargs) tuples
+        self.tasks.put((final_priority, session_name, func, args, kwargs))
+
+        processing_count = len(self.processing_now)
+        total_active = len(self.active_sessions)
+
         logger.info(
-            "Adding task to queue: %s (session: %s), queue size: %d",
+            "Adding task to queue: %s (session: %s), base_priority: %d, final_priority: %d, sequence: %d, processing: %d, total active: %d",
             func.__name__,
             session_name,
-            queue_size,
+            base_priority,
+            final_priority,
+            task_sequence,
+            processing_count,
+            total_active,
         )
 
     def is_in_queue(self, session_name: str) -> bool:
@@ -70,7 +97,7 @@ class TasksQueue(metaclass=Singleton):
         Returns:
             bool: True if session is currently being processed, False otherwise.
         """
-        return session_name == self.processing_now
+        return session_name in self.processing_now
 
     def get_active_tasks_count(self) -> int:
         """Get the total number of active tasks (queued + processing).
@@ -82,32 +109,55 @@ class TasksQueue(metaclass=Singleton):
 
     def _worker(self):
         while True:
-            session_name, func, args, kwargs = self.tasks.get()
-            self.processing_now = session_name
-            try:
-                func(*args, **kwargs)
-                remaining_tasks = self.tasks.qsize()
-                logger.info(
-                    "Task completed: %s (session: %s), remaining tasks: %d",
-                    func.__name__,
-                    session_name,
-                    remaining_tasks,
-                )
-            except Exception as e:
-                remaining_tasks = self.tasks.qsize()
-                logger.error(
-                    "Task %s (session: %s) failed with error: %s, remaining tasks: %d",
-                    func.__name__,
-                    session_name,
-                    e,
-                    remaining_tasks,
-                )
-                raise
-            finally:
-                # Remove session from active set when task completes or fails
-                self.active_sessions.discard(session_name)
-                self.tasks.task_done()
-                self.processing_now = None
+            # Get task from queue (blocks until available)
+            _, session_name, func, args, kwargs = self.tasks.get()
+
+            # Wait until we have executor capacity before submitting
+            while len(self.processing_now) >= MAX_PARALLEL_TASKS:
+                time.sleep(0.1)  # Short sleep to avoid busy waiting
+
+            # Submit task to executor
+            self.executor.submit(self._execute_task, session_name, func, args, kwargs)
+
+    def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
+        """Execute a single task in the thread pool."""
+        self.processing_now.add(session_name)
+        processing_count = len(self.processing_now)
+        total_active = len(self.active_sessions)
+        logger.info(
+            "Task started: %s (session: %s), processing: %d, total active: %d",
+            func.__name__,
+            session_name,
+            processing_count,
+            total_active,
+        )
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            logger.error(
+                "Task %s (session: %s) failed with error: %s",
+                func.__name__,
+                session_name,
+                e,
+                exc_info=True,  # Include full traceback for debugging
+            )
+            # Note: We don't re-raise here since it would crash the thread
+        finally:
+            # Remove session from active sets when task completes or fails
+            self.processing_now.discard(session_name)
+            self.active_sessions.discard(session_name)
+            # Mark task as done in the queue
+            self.tasks.task_done()
+            # Calculate counts after removal for accuracy
+            processing_count = len(self.processing_now)
+            total_active = len(self.active_sessions)
+            logger.info(
+                "Task finished: %s (session: %s), processing: %d, total active: %d",
+                func.__name__,
+                session_name,
+                processing_count,
+                total_active,
+            )
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
