@@ -4,6 +4,7 @@ import json
 import os
 import queue
 import threading
+import time
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Literal
@@ -106,16 +107,16 @@ class TasksQueue(metaclass=Singleton):
 
     def _worker(self):
         while True:
-            # Only submit if we have available executor capacity
-            if len(self.processing_now) < MAX_PARALLEL_TASKS:
-                _, session_name, func, args, kwargs = self.tasks.get()
-                self.executor.submit(self._execute_task, session_name, func, args, kwargs)
-                self.tasks.task_done()
-            else:
-                # Wait a bit before checking again if executor has capacity
-                import time
+            # Get task from queue (blocks until available)
+            _, session_name, func, args, kwargs = self.tasks.get()
 
-                time.sleep(1)
+            # Wait until we have executor capacity before submitting
+            while len(self.processing_now) >= MAX_PARALLEL_TASKS:
+                time.sleep(0.1)  # Short sleep to avoid busy waiting
+
+            # Submit task to executor
+            self.executor.submit(self._execute_task, session_name, func, args, kwargs)
+            self.tasks.task_done()
 
     def _execute_task(self, session_name: str, func: Callable, args: tuple, kwargs: dict):
         """Execute a single task in the thread pool."""
