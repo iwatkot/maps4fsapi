@@ -1,5 +1,6 @@
 """This module provides functionality for managing tasks related to map generation."""
 
+import itertools
 import json
 import os
 import queue
@@ -34,7 +35,7 @@ class TasksQueue(metaclass=Singleton):
         self.executor = ThreadPoolExecutor(max_workers=MAX_PARALLEL_TASKS)
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
-        self._task_counter = 0  # Counter for FIFO tie-breaking
+        self._task_counter = itertools.count()  # Thread-safe counter for FIFO tie-breaking
 
     def add_task(self, session_name: str, func: Callable, *args, **kwargs):
         """Adds a task to the priority queue with size-based prioritization.
@@ -56,8 +57,8 @@ class TasksQueue(metaclass=Singleton):
         self.active_sessions.add(session_name)
 
         # Add counter to priority for FIFO ordering of equal base priorities
-        self._task_counter += 1
-        final_priority = base_priority + self._task_counter  # Integer addition for FIFO
+        task_sequence = next(self._task_counter)
+        final_priority = base_priority + task_sequence  # Integer addition for FIFO
 
         # PriorityQueue uses (priority, session_name, func, args, kwargs) tuples
         self.tasks.put((final_priority, session_name, func, args, kwargs))
@@ -66,11 +67,12 @@ class TasksQueue(metaclass=Singleton):
         total_active = len(self.active_sessions)
 
         logger.info(
-            "Adding task to queue: %s (session: %s), base_priority: %d, final_priority: %d, processing: %d, total active: %d",
+            "Adding task to queue: %s (session: %s), base_priority: %d, final_priority: %d, sequence: %d, processing: %d, total active: %d",
             func.__name__,
             session_name,
             base_priority,
             final_priority,
+            task_sequence,
             processing_count,
             total_active,
         )
@@ -150,12 +152,11 @@ class TasksQueue(metaclass=Singleton):
             processing_count = len(self.processing_now)
             total_active = len(self.active_sessions)
             logger.info(
-                "Task finished: %s (session: %s), processing: %d, total active: %d. Processed total: %d",
+                "Task finished: %s (session: %s), processing: %d, total active: %d",
                 func.__name__,
                 session_name,
                 processing_count,
                 total_active,
-                self._task_counter,
             )
 
 
