@@ -300,8 +300,8 @@ def task_generation(
         )
 
         if is_public:
-            logger.info("Running in public mode, will adjust map settings accordingly.")
-            adjust_settings_for_public(mp)
+            # logger.info("Running in public mode, will adjust map settings accordingly.")
+            # adjust_settings_for_public(mp)
 
             if mp.size > PUBLIC_MAX_MAP_SIZE:
                 logger.warning(
@@ -438,17 +438,17 @@ def files_to_archive(filepaths: list[str], archive_path: str) -> None:
                 archive.write(filepath, arcname=os.path.basename(filepath))
 
 
-def adjust_settings_for_public(mp: mfs.Map) -> None:
-    """Adjusts the map settings for public access, modifying the map instance in place.
+# def adjust_settings_for_public(mp: mfs.Map) -> None:
+#     """Adjusts the map settings for public access, modifying the map instance in place.
 
-    Arguments:
-        mp (mfs.Map): The map instance to adjust.
-    """
-    mp.satellite_settings.zoom_level = min(mp.satellite_settings.zoom_level, 16)
-    mp.texture_settings.dissolve = False
-    mp.background_settings.flatten_roads = False
+#     Arguments:
+#         mp (mfs.Map): The map instance to adjust.
+#     """
+#     mp.satellite_settings.zoom_level = min(mp.satellite_settings.zoom_level, 16)
+#     mp.texture_settings.dissolve = False
+#     mp.background_settings.flatten_roads = False
 
-    logger.debug("Adjusted map settings for public access.")
+#     logger.debug("Adjusted map settings for public access.")
 
 
 def osm_str_to_xml(custom_osm_str: str, save_path: str) -> None:
