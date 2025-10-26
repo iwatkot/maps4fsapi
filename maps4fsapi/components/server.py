@@ -46,27 +46,22 @@ def run_upgrader():
     Launches the Docker container to perform the upgrade. Handles cleanup of existing
     containers and images before running the new upgrader.
     """
+    logger.info("Running upgrader container...")
     try:
         client = docker.from_env()
+        logger.info("Docker client initialized successfully.")
 
         try:
             existing_container = client.containers.get("maps4fsupgrader")
             logger.info("Found existing maps4fsupgrader container, stopping it...")
             existing_container.stop(timeout=10)
             logger.info("Stopped existing maps4fsupgrader container")
+            existing_container.remove(force=True)
+            logger.info("Removed existing maps4fsupgrader container")
         except docker.errors.NotFound:
             logger.debug("No existing maps4fsupgrader container found")
         except Exception as e:
             logger.warning("Failed to stop existing container: %s", e)
-
-        try:
-            existing_container = client.containers.get("maps4fsupgrader")
-            existing_container.remove(force=True)
-            logger.info("Removed existing maps4fsupgrader container")
-        except docker.errors.NotFound:
-            logger.debug("No existing maps4fsupgrader container to remove")
-        except Exception as e:
-            logger.warning("Failed to remove existing container: %s", e)
 
         try:
             client.images.remove("iwatkot/maps4fsupgrader:latest", force=True)
@@ -75,6 +70,8 @@ def run_upgrader():
             logger.debug("No existing iwatkot/maps4fsupgrader image to remove")
         except Exception as e:
             logger.warning("Failed to remove existing image: %s", e)
+
+        logger.info("Launching new maps4fsupgrader container...")
 
         container = client.containers.run(
             "iwatkot/maps4fsupgrader:latest",
@@ -99,12 +96,15 @@ def upgrade_server(background_tasks: BackgroundTasks):
     Raises:
         HTTPException: If the server is not upgradable.
     """
+    logger.info("Received request to upgrade the server.")
     res = is_upgradable()
     if not res.get("upgradable", False):
+        logger.error("Server is not upgradable.")
         raise HTTPException(
             status_code=500, detail="Server is not upgradable for an unknown reason."
         )
 
+    logger.info("Starting server upgrade in the background.")
     background_tasks.add_task(run_upgrader)
 
     return {
