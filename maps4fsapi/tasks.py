@@ -173,6 +173,7 @@ def task_generation(
             "custom_texture_schema_path": payload.custom_texture_schema_path,
             "custom_tree_schema_path": payload.custom_tree_schema_path,
             "custom_map_template_path": payload.custom_map_template_path,
+            "custom_buildings_schema_path": payload.custom_buildings_schema_path,
         }
         logger.info("Starting task %s with payload summary: %s", session_name, payload_summary)
         success = True
@@ -265,6 +266,14 @@ def task_generation(
                 payload.game_code, "tree", payload.custom_tree_schema_path
             )
             logger.info("Loaded custom tree schema from: %s", payload.custom_tree_schema_path)
+        if payload.custom_buildings_schema_path:
+            buildings_custom_schema = load_custom_schemas(
+                payload.game_code, "buildings", payload.custom_buildings_schema_path
+            )
+            generation_settings.buildings_settings.custom_schema = buildings_custom_schema
+            logger.info(
+                "Loaded custom buildings schema from: %s", payload.custom_buildings_schema_path
+            )
 
         custom_template_path = None
         if payload.custom_map_template_path:
@@ -297,6 +306,7 @@ def task_generation(
             texture_custom_schema=texture_custom_schema,
             tree_custom_schema=tree_custom_schema,
             custom_template_path=custom_template_path,
+            buildings_custom_schema=buildings_custom_schema,
         )
 
         if is_public:
@@ -381,12 +391,12 @@ def task_generation(
 
 
 def load_custom_schemas(
-    game_code: str, schema_type: Literal["texture", "tree"], file_name: str
+    game_code: str, schema_type: Literal["texture", "tree", "buildings"], file_name: str
 ) -> list[dict[str, Any]]:
     """Loads custom texture or tree schemas from a specified file.
     Arguments:
         game_code (str): The game code.
-        schema_type (Literal["texture", "tree"]): The type of schema to load.
+        schema_type (Literal["texture", "tree", "buildings"]): The type of schema to load.
         file_name (str): The name of the schema file to load.
 
     Raises:
@@ -398,6 +408,7 @@ def load_custom_schemas(
     schema_dirs = {
         "texture": "texture_schemas",
         "tree": "tree_schemas",
+        "buildings": "buildings_schemas",
     }
     file_path = os.path.join(
         mfscfg.MFS_TEMPLATES_DIR, game_code, schema_dirs[schema_type], file_name

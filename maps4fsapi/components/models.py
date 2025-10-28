@@ -63,6 +63,7 @@ class MainSettingsPayload(GameCodePayload):
     custom_texture_schema_path: str | None = None
     custom_tree_schema_path: str | None = None
     custom_map_template_path: str | None = None
+    custom_buildings_schema_path: str | None = None
 
 
 class DEMSettingsPayload(MainSettingsPayload):
