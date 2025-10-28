@@ -256,6 +256,7 @@ def task_generation(
 
         texture_custom_schema = None
         tree_custom_schema = None
+        buildings_custom_schema = None
         if payload.custom_texture_schema_path:
             texture_custom_schema = load_custom_schemas(
                 payload.game_code, "texture", payload.custom_texture_schema_path
@@ -270,7 +271,6 @@ def task_generation(
             buildings_custom_schema = load_custom_schemas(
                 payload.game_code, "buildings", payload.custom_buildings_schema_path
             )
-            generation_settings.buildings_settings.custom_schema = buildings_custom_schema
             logger.info(
                 "Loaded custom buildings schema from: %s", payload.custom_buildings_schema_path
             )
