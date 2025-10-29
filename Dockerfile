@@ -21,6 +21,8 @@ COPY requirements.txt /usr/src/app/requirements.txt
 COPY entrypoint.sh /usr/src/app/entrypoint.sh
 RUN chmod +x /usr/src/app/entrypoint.sh
 
+# Ensure that we're using osmnx installed from fork, not the main pypi version.
+RUN pip install git+https://github.com/iwatkot/osmnx.git
 RUN pip install -r requirements.txt
 
 EXPOSE 8000
