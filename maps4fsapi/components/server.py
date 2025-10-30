@@ -1,6 +1,7 @@
 """Server management for the API."""
 
 import docker
+import maps4fs.generator.config as mfscfg
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from maps4fsapi.config import USERPROFILE, is_public, logger
@@ -38,6 +39,59 @@ def is_upgradable() -> dict[str, bool]:
         )
 
     return {"upgradable": True}
+
+
+@server_router.post("/reload_templates")
+def reload_templates():
+    """Reload the server templates by running the template reloader Docker container.
+
+    Raises:
+        HTTPException: If the server is public or if reloading templates fails.
+
+    The reload process runs in the background after responding to the client.
+    """
+    logger.info("Received request to reload templates.")
+    if is_public:
+        raise HTTPException(
+            status_code=403, detail="Reloading templates not allowed on public server."
+        )
+
+    try:
+        mfscfg.reload_templates()
+        logger.info("Templates reloaded successfully.")
+        return {"success": True}
+    except Exception as e:
+        logger.error("Failed to reload templates: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to reload templates.",
+        )
+
+
+@server_router.post("/clean_cache")
+def clean_cache():
+    """Clean the server cache by removing all files in the cache directory.
+
+    Raises:
+        HTTPException: If the server is public or if cleaning the cache fails.
+
+    Returns:
+        dict[str, bool]: A dictionary indicating whether the cache was cleaned successfully.
+    """
+    logger.info("Received request to clean cache.")
+    if is_public:
+        raise HTTPException(status_code=403, detail="Cleaning cache not allowed on public server.")
+
+    try:
+        mfscfg.clean_cache()
+        logger.info("Cache cleaned successfully.")
+        return {"success": True}
+    except Exception as e:
+        logger.error("Failed to clean cache: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to clean cache.",
+        )
 
 
 def run_upgrader():
