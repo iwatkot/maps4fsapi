@@ -104,6 +104,12 @@ class SatelliteSettingsPayload(MainSettingsPayload):
     satellite_settings: mfs.settings.SatelliteSettings = mfs.settings.SatelliteSettings()
 
 
+class BuildingSettingsPayload(MainSettingsPayload):
+    """Payload model for Building settings, extending MainSettingsPayload."""
+
+    building_settings: mfs.settings.BuildingSettings = mfs.settings.BuildingSettings()
+
+
 class MapGenerationPayload(MainSettingsPayload):
     """Payload model for Map generation settings, extending MainSettingsPayload."""
 
@@ -113,3 +119,4 @@ class MapGenerationPayload(MainSettingsPayload):
     i3d_settings: mfs.settings.I3DSettings = mfs.settings.I3DSettings()
     texture_settings: mfs.settings.TextureSettings = mfs.settings.TextureSettings()
     satellite_settings: mfs.settings.SatelliteSettings = mfs.settings.SatelliteSettings()
+    building_settings: mfs.settings.BuildingSettings = mfs.settings.BuildingSettings()
