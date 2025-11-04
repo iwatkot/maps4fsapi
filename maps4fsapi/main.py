@@ -1,5 +1,6 @@
 """Main entry point for the Maps4FS API application."""
 
+import asyncio
 import logging
 import time
 from typing import Callable
@@ -18,7 +19,14 @@ from maps4fsapi.components.task import task_router
 from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
 from maps4fsapi.components.users import users_router
-from maps4fsapi.config import is_public, logger, package_version, version_status
+from maps4fsapi.config import (
+    apply_queue,
+    is_heavy_endpoint,
+    is_public,
+    logger,
+    package_version,
+    version_status,
+)
 from maps4fsapi.tasks import TasksQueue
 
 # Configure logging to suppress INFO level access logs
@@ -46,12 +54,12 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
         Response: The HTTP response object returned by the next handler in the chain.
     """
     # Check if this is the map generation endpoint
-    is_map_generate = request.url.path == "/map/generate"
+    is_heavy = is_heavy_endpoint(request.url.path)
 
-    start_time = time.time() if is_map_generate else None
+    start_time = time.time() if is_heavy else None
     client_ip = "unknown"
 
-    if is_map_generate:
+    if is_heavy:
         try:
             # Get client IP (handles proxies with X-Forwarded-For header)
             client_ip = request.client.host if request.client else "unknown"
@@ -62,12 +70,18 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
         except Exception:
             pass
 
+    origin = request.headers.get("origin", "not_specified")
+    if is_heavy:
+        if not apply_queue(origin):
+            await asyncio.sleep(30)
+
+            return Response(content="", headers={"Connection": "close"})
+
     response = await call_next(request)
 
-    if is_map_generate and start_time is not None:
+    if is_heavy and start_time is not None:
         try:
             process_time = time.time() - start_time
-            origin = request.headers.get("origin", "direct-api-call")
             user_agent = request.headers.get("user-agent", "unknown")
             logger.info(
                 "IP: %s - Origin: %s - %s %s - Status: %s - Time: %.3fs - UA: %s",

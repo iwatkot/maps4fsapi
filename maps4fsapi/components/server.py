@@ -23,14 +23,19 @@ def is_upgradable() -> dict[str, bool]:
     if is_public:
         raise HTTPException(status_code=403, detail="Upgrade not allowed on public server.")
 
+    logger.info("Received request to check if server is upgradable.")
     if not USERPROFILE:
+        logger.warning("USERPROFILE environment variable is not set.")
         raise HTTPException(
             status_code=500,
             detail="USERPROFILE environment variable is not set. Can not upgrade.",
         )
 
+    logger.info("USERPROFILE is set to: %s", "*" * len(USERPROFILE))
+
     try:
         docker.from_env()
+        logger.info("Docker client initialized successfully, server is upgradable.")
     except (docker.errors.DockerException, OSError) as e:
         logger.error("Docker client error: %s", e)
         raise HTTPException(
