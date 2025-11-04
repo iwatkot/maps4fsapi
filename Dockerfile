@@ -26,7 +26,7 @@ RUN pip install -r requirements.txt
 # Copy the maps4fsapi source code into the container
 COPY maps4fsapi/ /usr/src/app/maps4fsapi/
 COPY pyproject.toml /usr/src/app/pyproject.toml
-# Install the local maps4fsapi package in editable mode
+# Install the local maps4fsapi package
 RUN pip install .
 
 EXPOSE 8000
