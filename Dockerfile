@@ -18,14 +18,18 @@ RUN git clone --depth 1 https://github.com/iwatkot/maps4fsdata.git /tmp/maps4fsd
     && rm -rf /tmp/maps4fsdata
 
 COPY requirements.txt /usr/src/app/requirements.txt
-COPY entrypoint.sh /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh
 
 # Ensure that we're using osmnx installed from fork, not the main pypi version.
 RUN pip install git+https://github.com/iwatkot/osmnx.git
 RUN pip install -r requirements.txt
 
+# Copy the maps4fsapi source code into the container
+COPY maps4fsapi/ /usr/src/app/maps4fsapi/
+COPY pyproject.toml /usr/src/app/pyproject.toml
+# Install the local maps4fsapi package
+RUN pip install .
+
 EXPOSE 8000
 
 ENV PYTHONPATH .:${PYTHONPATH}
-CMD ["/usr/src/app/entrypoint.sh"]
+CMD ["uvicorn", "maps4fsapi.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "warning"]
