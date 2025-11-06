@@ -105,6 +105,7 @@ if is_public:
         allow_origins=[
             "https://maps4fs.xyz",
             "https://www.maps4fs.xyz",
+            "https://info.maps4fs.xyz",
         ],
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],

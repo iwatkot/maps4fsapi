@@ -173,7 +173,7 @@ def apply_queue(origin: str) -> bool:
     if hostname.lower() in ["localhost", "127.0.0.1", "::1"]:
         return True
 
-    if hostname.lower() in ["maps4fs.xyz", "www.maps4fs.xyz"]:
+    if hostname.lower() in ["maps4fs.xyz", "www.maps4fs.xyz", "info.maps4fs.xyz"]:
         return True
 
     try:
