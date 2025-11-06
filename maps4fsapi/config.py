@@ -197,7 +197,6 @@ def is_heavy_endpoint(path: str) -> bool:
     """
     heavy_endpoints = [
         "/map/generate",
-        "/map/download",
         "/task/get",
     ]
     for endpoint in heavy_endpoints:
