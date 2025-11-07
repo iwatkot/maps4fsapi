@@ -25,6 +25,7 @@ from maps4fsapi.config import (
     is_heavy_endpoint,
     is_public,
     logger,
+    online_since,
     package_version,
     version_status,
 )
@@ -159,4 +160,5 @@ async def health_check():
         "history": TasksQueue().get_all_task_info(),
         "queue_size": TasksQueue().get_active_tasks_count(),
         "max_queue_size": PUBLIC_QUEUE_LIMIT,
+        "online_since": online_since(),
     }

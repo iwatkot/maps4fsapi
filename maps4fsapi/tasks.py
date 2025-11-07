@@ -111,7 +111,7 @@ class TasksQueue(metaclass=Singleton):
         queued_tasks = list(self.active_sessions_info)
         processing_task = [self.processing_now_info] if self.processing_now_info else []
         completed_tasks = list(self.history)
-        all_tasks = processing_task + queued_tasks + completed_tasks
+        all_tasks = completed_tasks + processing_task + queued_tasks
         return [task.to_json() for task in all_tasks]
 
     def is_in_queue(self, session_name: str) -> bool:
