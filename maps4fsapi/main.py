@@ -7,6 +7,7 @@ from typing import Callable
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from maps4fsapi.components.dtm import dtm_router
 from maps4fsapi.components.grle import grle_router
@@ -156,9 +157,17 @@ async def get_queue_size():
 @app.get("/info/health")
 async def health_check():
     """Health check endpoint showing the task history and current queue size."""
-    return {
+    content = {
         "history": TasksQueue().get_all_task_info(),
         "queue_size": TasksQueue().get_active_tasks_count(),
         "max_queue_size": PUBLIC_QUEUE_LIMIT,
         "online_since": online_since(),
     }
+    return JSONResponse(
+        content=content,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
