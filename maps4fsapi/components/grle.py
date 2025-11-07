@@ -36,7 +36,7 @@ def grle_generation(
     TasksQueue().add_task(
         task_id,
         task_generation,
-        task_id,
+        # task_id,
         payload,
         ["Texture", "GRLE"],
         assets,

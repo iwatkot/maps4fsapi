@@ -66,7 +66,7 @@ def dtm_dem(payload: DEMSettingsPayload, request: Request) -> dict[str, str | bo
     TasksQueue().add_task(
         task_id,
         task_generation,
-        task_id,
+        # task_id,
         payload,
         ["Background"],
         ["dem"],

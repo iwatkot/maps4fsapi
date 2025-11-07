@@ -5,7 +5,8 @@ import os
 import queue
 import threading
 import zipfile
-from typing import Any, Callable, Literal
+from collections import deque
+from typing import Any, Callable, Literal, NamedTuple
 
 import maps4fs as mfs
 import maps4fs.generator.config as mfscfg
@@ -15,10 +16,45 @@ from maps4fsapi.config import (
     MFS_CUSTOM_OSM_DIR,
     PUBLIC_MAX_MAP_SIZE,
     Singleton,
+    human_readable_time_diff,
     is_public,
     logger,
+    rounded_time_now,
 )
 from maps4fsapi.storage import Storage, StorageEntry
+
+
+class HistoryEntry(NamedTuple):
+    """A named tuple representing an entry in the task history."""
+
+    session_name: str
+    coordinates: tuple[int, int]  # To not include detailed coordinates, we just round them to int.
+    game_code: str  # Game code, e.g., "fs25".
+    size: int  # Size of the map in meters.
+    status: Literal["Completed", "Failed", "Started processing", "Added to queue"]
+    # Tasks that wait in queue do not have a timestamp yet.
+    timestamp: int
+
+    def to_json(self) -> dict[str, str | int]:
+        """Convert the HistoryEntry to a JSON-serializable dictionary.
+
+        Returns:
+            dict[str, str | int]: A dictionary representation of the HistoryEntry.
+        """
+        time_diff = rounded_time_now() - self.timestamp if self.timestamp else None
+        human_time = ""
+        if time_diff is not None:
+            human_time = human_readable_time_diff(time_diff)
+
+        status_text = f"{self.status} {human_time}"
+        coordinates_text = f"{self.coordinates[0]}, {self.coordinates[1]}"
+
+        return {
+            "coordinates": coordinates_text,
+            "game_code": self.game_code,
+            "size": self.size,
+            "status": status_text,
+        }
 
 
 class TasksQueue(metaclass=Singleton):
@@ -26,22 +62,38 @@ class TasksQueue(metaclass=Singleton):
 
     def __init__(self):
         self.tasks = queue.Queue()
+        self.history = deque(maxlen=10)
         self.active_sessions = set()  # Track session names currently in queue or processing
+        self.active_sessions_info = set()
         self.processing_now = None
+        self.processing_now_info = None
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
-    def add_task(self, session_name: str, func: Callable, *args, **kwargs):
+    def add_task(
+        self, session_name: str, func: Callable, payload: MainSettingsPayload, *args, **kwargs
+    ):
         """Adds a task to the queue with a session name identifier.
 
         Arguments:
             session_name (str): Unique session identifier for the task.
             func (Callable): The function to be executed as a task.
+            payload (MainSettingsPayload): The payload containing settings for the task.
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
         """
         self.active_sessions.add(session_name)
-        self.tasks.put((session_name, func, args, kwargs))
+        entry = HistoryEntry(
+            session_name=session_name,
+            coordinates=(int(payload.lat), int(payload.lon)),
+            game_code=payload.game_code.upper(),
+            size=payload.size,
+            status="Added to queue",
+            timestamp=rounded_time_now(),
+        )
+        self.active_sessions_info.add(entry)
+
+        self.tasks.put((session_name, func, payload, args, kwargs))
         queue_size = self.tasks.qsize()
         logger.info(
             "Adding task to queue: %s (session: %s), queue size: %d",
@@ -49,6 +101,18 @@ class TasksQueue(metaclass=Singleton):
             session_name,
             queue_size,
         )
+
+    def get_all_task_info(self) -> list[dict[str, str | int]]:
+        """Retrieve information about all tasks: queued, processing, and completed.
+
+        Returns:
+            list[dict[str, str | int]]: A list of dictionaries containing task information.
+        """
+        queued_tasks = list(self.active_sessions_info)
+        processing_task = [self.processing_now_info] if self.processing_now_info else []
+        completed_tasks = list(self.history)
+        all_tasks = completed_tasks + processing_task + queued_tasks
+        return [task.to_json() for task in all_tasks]
 
     def is_in_queue(self, session_name: str) -> bool:
         """Check if a task with the given session name is currently in queue or being processed.
@@ -72,6 +136,25 @@ class TasksQueue(metaclass=Singleton):
         """
         return session_name == self.processing_now
 
+    def what_is_processing(self) -> HistoryEntry | None:
+        """Get information about the task that is currently being processed.
+
+        Returns:
+            HistoryEntry | None: Information about the currently processing task,
+                or None if no task is being processed.
+        """
+        return self.processing_now_info
+
+    def remove_active_session(self, session_name: str) -> None:
+        """Removes a session name from the active sessions info set.
+
+        Arguments:
+            session_name (str): The session name to remove.
+        """
+        entry = next((e for e in self.active_sessions_info if e.session_name == session_name), None)
+        if entry:
+            self.active_sessions_info.remove(entry)
+
     def get_active_tasks_count(self) -> int:
         """Get the total number of active tasks (queued + processing).
 
@@ -82,10 +165,20 @@ class TasksQueue(metaclass=Singleton):
 
     def _worker(self):
         while True:
-            session_name, func, args, kwargs = self.tasks.get()
+            session_name, func, payload, args, kwargs = self.tasks.get()
             self.processing_now = session_name
+            self.processing_now_info = HistoryEntry(
+                session_name=session_name,
+                coordinates=(int(payload.lat), int(payload.lon)),
+                game_code=payload.game_code.upper(),
+                size=payload.size,
+                status="Started processing",
+                timestamp=rounded_time_now(),
+            )
+            self.remove_active_session(session_name)
+            history_status = "Failed"
             try:
-                func(*args, **kwargs)
+                func(session_name, payload, *args, **kwargs)
                 remaining_tasks = self.tasks.qsize()
                 logger.info(
                     "Task completed: %s (session: %s), remaining tasks: %d",
@@ -93,6 +186,7 @@ class TasksQueue(metaclass=Singleton):
                     session_name,
                     remaining_tasks,
                 )
+                history_status = "Completed"
             except Exception as e:
                 remaining_tasks = self.tasks.qsize()
                 logger.error(
@@ -108,6 +202,19 @@ class TasksQueue(metaclass=Singleton):
                 self.active_sessions.discard(session_name)
                 self.tasks.task_done()
                 self.processing_now = None
+                self.processing_now_info = None
+
+                history_entry = HistoryEntry(
+                    session_name=session_name,
+                    coordinates=(int(payload.lat), int(payload.lon)),
+                    game_code=payload.game_code.upper(),
+                    size=payload.size,
+                    status=history_status,
+                    timestamp=rounded_time_now(),
+                )
+
+                # Add the history entry to the processing history
+                self.history.append(history_entry)
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:

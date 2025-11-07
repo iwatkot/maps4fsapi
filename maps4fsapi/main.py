@@ -20,10 +20,12 @@ from maps4fsapi.components.templates import templates_router
 from maps4fsapi.components.texture import texture_router
 from maps4fsapi.components.users import users_router
 from maps4fsapi.config import (
+    PUBLIC_QUEUE_LIMIT,
     apply_queue,
     is_heavy_endpoint,
     is_public,
     logger,
+    online_since,
     package_version,
     version_status,
 )
@@ -149,3 +151,14 @@ async def get_version_status():
 async def get_queue_size():
     """Endpoint to retrieve the current number of active tasks (queued + processing)."""
     return {"queue_size": TasksQueue().get_active_tasks_count()}
+
+
+@app.get("/info/health")
+async def health_check():
+    """Health check endpoint showing the task history and current queue size."""
+    return {
+        "history": TasksQueue().get_all_task_info(),
+        "queue_size": TasksQueue().get_active_tasks_count(),
+        "max_queue_size": PUBLIC_QUEUE_LIMIT,
+        "online_since": online_since(),
+    }
