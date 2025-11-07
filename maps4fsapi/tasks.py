@@ -178,15 +178,23 @@ class TasksQueue(metaclass=Singleton):
             self.remove_active_session(session_name)
             history_status = "Failed"
             try:
-                func(session_name, payload, *args, **kwargs)
-                remaining_tasks = self.tasks.qsize()
-                logger.info(
-                    "Task completed: %s (session: %s), remaining tasks: %d",
-                    func.__name__,
-                    session_name,
-                    remaining_tasks,
-                )
-                history_status = "Completed"
+                res = func(session_name, payload, *args, **kwargs)
+                if res:
+                    remaining_tasks = self.tasks.qsize()
+                    logger.info(
+                        "Task completed: %s (session: %s), remaining tasks: %d",
+                        func.__name__,
+                        session_name,
+                        remaining_tasks,
+                    )
+                    history_status = "Completed"
+                else:
+                    logger.error(
+                        "Task %s (session: %s) did not complete successfully.",
+                        func.__name__,
+                        session_name,
+                    )
+                    history_status = "Failed"
             except Exception as e:
                 remaining_tasks = self.tasks.qsize()
                 logger.error(
@@ -248,7 +256,7 @@ def task_generation(
     components: list[str] | None = None,
     assets: list[str] | None = None,
     include_all: bool = False,
-) -> None:
+) -> bool:
     """Generates a map based on the provided payload and saves the output.
 
     Arguments:
@@ -257,6 +265,9 @@ def task_generation(
         components (list[str]): List of components to be included in the map.
         assets (list[str] | None): Optional list of specific assets to include in the output.
         include_all (bool): If True, includes all components in the map generation.
+
+    Returns:
+        bool: True if the task completed successfully, False otherwise.
     """
     task_directory = None
     output_path = None
@@ -495,6 +506,7 @@ def task_generation(
         )
 
     Storage().add_entry(session_name, storage_entry)
+    return success
 
 
 def load_custom_schemas(
