@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 from ipaddress import AddressValueError, IPv4Address
+from time import time
 from typing import Any
 
 import maps4fs as mfs
@@ -13,6 +14,10 @@ from dotenv import load_dotenv
 from packaging import version
 
 logger = mfs.Logger(level="INFO")
+
+# Save the rounded epoch time when the module is loaded.
+STARTED_AT = int(time())
+logger.info("Maps4FS API started at epoch time: %d", STARTED_AT)
 
 # region Public Limits
 PUBLIC_MAX_MAP_SIZE = 8192
@@ -69,6 +74,50 @@ else:
 FRONTEND_API_KEY = os.getenv("FRONTEND_API_KEY")
 if FRONTEND_API_KEY:
     logger.info("FRONTEND_API_KEY: %s", "*" * len(FRONTEND_API_KEY))
+
+
+def online_since() -> str:
+    """Get the online since time as a formatted string.
+
+    Returns:
+        str: The online since time in "YYYY-MM-DD HH:MM:SS" format.
+    """
+    uptime_seconds = rounded_time_now() - STARTED_AT
+    return human_readable_time_diff(uptime_seconds, add_ago=False)
+
+
+def rounded_time_now() -> int:
+    """Get the current rounded epoch time.
+
+    Returns:
+        int: The current rounded epoch time.
+    """
+    return int(time())
+
+
+def human_readable_time_diff(seconds: int, add_ago: bool = True) -> str:
+    """Convert a time difference in seconds to a simple human-readable format.
+    For example, "5 minutes", "2 hours", "3 days". Optionally adds "ago" at the end.
+
+    Arguments:
+        seconds (int): The time difference in seconds.
+        add_ago (bool): Whether to append "ago" at the end of the string.
+
+    Returns:
+        str: The human-readable time difference.
+    """
+    if seconds < 60 * 60:
+        minutes = seconds // 60
+        diff = f"{minutes} minutes"
+    elif seconds < 24 * 60 * 60:
+        hours = seconds // (60 * 60)
+        diff = f"{hours} hours"
+    else:
+        days = seconds // (24 * 60 * 60)
+        diff = f"{days} days"
+    if add_ago:
+        diff += " ago"
+    return diff
 
 
 def get_package_version(package_name: str) -> str:

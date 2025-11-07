@@ -149,3 +149,9 @@ async def get_version_status():
 async def get_queue_size():
     """Endpoint to retrieve the current number of active tasks (queued + processing)."""
     return {"queue_size": TasksQueue().get_active_tasks_count()}
+
+
+@app.get("/info/health")
+async def health_check():
+    """Health check endpoint to verify the API is running."""
+    return {"history": TasksQueue().get_all_task_info()}
