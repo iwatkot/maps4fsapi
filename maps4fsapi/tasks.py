@@ -62,7 +62,7 @@ class TasksQueue(metaclass=Singleton):
 
     def __init__(self):
         self.tasks = queue.Queue()
-        self.history = deque(maxlen=10)
+        self.history = deque(maxlen=20)
         self.active_sessions = set()  # Track session names currently in queue or processing
         self.active_sessions_info = set()
         self.processing_now = None
