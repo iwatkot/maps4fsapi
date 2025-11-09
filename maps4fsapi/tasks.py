@@ -64,7 +64,7 @@ class TasksQueue(metaclass=Singleton):
         self.tasks = queue.Queue()
         self.history = deque(maxlen=20)
         self.active_sessions = set()  # Track session names currently in queue or processing
-        self.active_sessions_info = set()
+        self.active_sessions_info = []
         self.processing_now = None
         self.processing_now_info = None
         self.worker = threading.Thread(target=self._worker, daemon=True)
@@ -91,7 +91,7 @@ class TasksQueue(metaclass=Singleton):
             status="Added to queue",
             timestamp=rounded_time_now(),
         )
-        self.active_sessions_info.add(entry)
+        self.active_sessions_info.append(entry)
 
         self.tasks.put((session_name, func, payload, args, kwargs))
         queue_size = self.tasks.qsize()
@@ -108,7 +108,7 @@ class TasksQueue(metaclass=Singleton):
         Returns:
             list[dict[str, str | int]]: A list of dictionaries containing task information.
         """
-        queued_tasks = list(self.active_sessions_info)
+        queued_tasks = self.active_sessions_info
         processing_task = [self.processing_now_info] if self.processing_now_info else []
         completed_tasks = list(self.history)
         all_tasks = completed_tasks + processing_task + queued_tasks
