@@ -6,6 +6,7 @@ import queue
 import threading
 import zipfile
 from collections import deque
+from time import perf_counter
 from typing import Any, Callable, Literal, NamedTuple
 
 import maps4fs as mfs
@@ -67,6 +68,9 @@ class TasksQueue(metaclass=Singleton):
         self.active_sessions_info = []
         self.processing_now = None
         self.processing_now_info = None
+        self.completed_tasks = 0
+        self.failed_tasks = 0
+        self.processing_time = 0.0  # In minutes.
         self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
@@ -101,6 +105,47 @@ class TasksQueue(metaclass=Singleton):
             session_name,
             queue_size,
         )
+
+    def seconds_to_minutes(self, seconds: float) -> float:
+        """Convert seconds to whole minutes.
+
+        Arguments:
+            seconds (float): The time in seconds.
+
+        Returns:
+            float: The time in whole minutes.
+        """
+        return round(seconds / 60, 1)
+
+    def average_processing_time(self) -> float:
+        """Calculate the average processing time per completed task in minutes.
+
+        Returns:
+            float: The average processing time in minutes, or 0 if no tasks have been completed.
+        """
+        if self.completed_tasks == 0:
+            return 0.0
+        return round(self.processing_time / self.completed_tasks, 1)
+
+    def wait_in_queue(self) -> float:
+        """Estimate the wait time in the queue based on average processing time and active tasks.
+
+        Returns:
+            float: Estimated wait time in minutes.
+        """
+        active_tasks = self.get_active_tasks_count()
+        avg_time = self.average_processing_time()
+        estimated_wait = active_tasks * avg_time
+        return round(estimated_wait, 1)
+
+    def get_tasks_count(self) -> tuple[int, int]:
+        """Get the total number of completed and failed tasks, first element is completed tasks,
+        then failed tasks.
+
+        Returns:
+            tuple[int, int]: A tuple containing the number of completed tasks and failed tasks.
+        """
+        return self.completed_tasks, self.failed_tasks
 
     def get_all_task_info(self) -> list[dict[str, str | int]]:
         """Retrieve information about all tasks: queued, processing, and completed.
@@ -178,6 +223,7 @@ class TasksQueue(metaclass=Singleton):
             self.remove_active_session(session_name)
             history_status = "Failed"
             try:
+                start_time = perf_counter()
                 res = func(session_name, payload, *args, **kwargs)
                 if res:
                     remaining_tasks = self.tasks.qsize()
@@ -188,6 +234,7 @@ class TasksQueue(metaclass=Singleton):
                         remaining_tasks,
                     )
                     history_status = "Completed"
+                    self.completed_tasks += 1
                 else:
                     logger.error(
                         "Task %s (session: %s) did not complete successfully.",
@@ -195,7 +242,9 @@ class TasksQueue(metaclass=Singleton):
                         session_name,
                     )
                     history_status = "Failed"
+                    self.failed_tasks += 1
             except Exception as e:
+                self.failed_tasks += 1
                 remaining_tasks = self.tasks.qsize()
                 logger.error(
                     "Task %s (session: %s) failed with error: %s, remaining tasks: %d",
@@ -223,6 +272,14 @@ class TasksQueue(metaclass=Singleton):
 
                 # Add the history entry to the processing history
                 self.history.append(history_entry)
+                end_time = perf_counter()
+                elapsed_time = end_time - start_time
+                self.processing_time += self.seconds_to_minutes(elapsed_time)
+                logger.info(
+                    "Session: %s finished in %.2f seconds.",
+                    session_name,
+                    elapsed_time,
+                )
 
 
 def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
