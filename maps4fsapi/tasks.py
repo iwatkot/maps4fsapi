@@ -127,16 +127,52 @@ class TasksQueue(metaclass=Singleton):
             return 0.0
         return round(self.processing_time / self.completed_tasks, 1)
 
-    def wait_in_queue(self) -> float:
+    def wait_in_queue(self, position: int | None = None) -> float:
         """Estimate the wait time in the queue based on average processing time and active tasks.
+
+        Arguments:
+            position (int | None): The position in the queue to estimate wait time for.
+                If None, uses the total number of active tasks.
 
         Returns:
             float: Estimated wait time in minutes.
         """
-        active_tasks = self.get_active_tasks_count()
+        active_tasks = position or self.get_active_tasks_count()
         avg_time = self.average_processing_time()
         estimated_wait = active_tasks * avg_time
         return round(estimated_wait, 1)
+
+    def get_queue_position(self, session_name: str) -> int | None:
+        """Get the position of a task in the queue based on its session name.
+
+        Arguments:
+            session_name (str): The session name to check.
+
+        Returns:
+            int | None: The position in the queue (0-based index), or None if not found.
+        """
+        if not self.is_in_queue(session_name):
+            return None
+        for idx, session_info in enumerate(self.active_sessions_info):
+            if session_info.session_name == session_name:
+                return idx
+        return None
+
+    def get_session_queue_status(self, session_name: str) -> tuple[bool, bool, int | None, float]:
+        """Get the queue status of a task based on its session name.
+
+        Arguments:
+            session_name (str): The session name to check.
+
+        Returns:
+            tuple[bool, bool, int | None, float]: A tuple containing the queue status information.
+        """
+        in_queue = self.is_in_queue(session_name)
+        processing = self.is_processing(session_name)
+        position = self.get_queue_position(session_name) if in_queue else None
+        estimated_wait = self.wait_in_queue(position) if in_queue else 0.0
+
+        return (in_queue, processing, position, estimated_wait)
 
     def get_tasks_count(self) -> tuple[int, int]:
         """Get the total number of completed and failed tasks, first element is completed tasks,
