@@ -155,8 +155,12 @@ async def get_queue_size():
 
 
 @app.get("/info/health")
-async def health_check():
-    """Health check endpoint showing the task history and current queue size."""
+async def health_check() -> JSONResponse:
+    """Health check endpoint showing the task history and current queue size.
+
+    Returns:
+        JSONResponse: A JSON response containing health check information.
+    """
     completed_count, failed_count = TasksQueue().get_tasks_count()
     total_count = completed_count + failed_count
     if not failed_count:
@@ -177,6 +181,34 @@ async def health_check():
     }
     return JSONResponse(
         content=content,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
+
+@app.get("/info/task_queue/{session_name}")
+async def get_task_queue_info(session_name: str) -> JSONResponse:
+    """Endpoint to retrieve detailed information about the task queue.
+
+    Arguments:
+        session_name (str): The session name to get the task queue info for.
+
+    Returns:
+        JSONResponse: A JSON response containing task queue information.
+    """
+    in_queue, processing, position, estimated_wait = TasksQueue().get_session_queue_status(
+        session_name
+    )
+    return JSONResponse(
+        content={
+            "in_queue": in_queue,
+            "processing": processing,
+            "position": position,
+            "estimated_wait_time": estimated_wait,
+        },
         headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "*",
