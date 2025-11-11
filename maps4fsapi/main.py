@@ -157,11 +157,23 @@ async def get_queue_size():
 @app.get("/info/health")
 async def health_check():
     """Health check endpoint showing the task history and current queue size."""
+    completed_count, failed_count = TasksQueue().get_tasks_count()
+    total_count = completed_count + failed_count
+    if not failed_count:
+        failed_percentage = 0.0
+    else:
+        failed_percentage = round((failed_count / total_count) * 100, 1)
+
     content = {
         "history": TasksQueue().get_all_task_info(),
         "queue_size": TasksQueue().get_active_tasks_count(),
         "max_queue_size": PUBLIC_QUEUE_LIMIT,
         "online_since": online_since(),
+        "completed_tasks": completed_count,
+        "failed_tasks": failed_count,
+        "failed_percentage": failed_percentage,
+        "average_processing_time": TasksQueue().average_processing_time(),
+        "estimated_wait_time": TasksQueue().wait_in_queue(),
     }
     return JSONResponse(
         content=content,
