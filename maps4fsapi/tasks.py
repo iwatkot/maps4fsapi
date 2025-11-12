@@ -349,6 +349,7 @@ def task_generation(
     components: list[str] | None = None,
     assets: list[str] | None = None,
     include_all: bool = False,
+    **kwargs,
 ) -> bool:
     """Generates a map based on the provided payload and saves the output.
 
@@ -518,6 +519,7 @@ def task_generation(
             tree_custom_schema=tree_custom_schema,
             custom_template_path=custom_template_path,
             buildings_custom_schema=buildings_custom_schema,
+            origin=kwargs.get("origin", None),
         )
 
         if is_public:

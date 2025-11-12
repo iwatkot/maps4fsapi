@@ -31,6 +31,7 @@ def map_generation(
     Raises:
         HTTPException: If the server is under high demand and cannot accept new tasks.
     """
+    origin: str | None = request.headers.get("origin", None)
     if is_public:
         active_tasks_count = TasksQueue().get_active_tasks_count()
         if active_tasks_count >= PUBLIC_QUEUE_LIMIT:
@@ -49,6 +50,7 @@ def map_generation(
         None,
         None,
         include_all=True,
+        origin=origin,
     )
 
     return {
