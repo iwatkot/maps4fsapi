@@ -6,7 +6,7 @@ on:
       tag_version:
         description: 'Tag version for the base image'
         required: true
-        default: 'latest'
+        default: '0.0.1'
         type: string
 
 jobs:
