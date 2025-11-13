@@ -1,4 +1,4 @@
-FROM iwatkot/blender:latest
+FROM iwatkot/maps4fsapibase:latest
 
 ARG API_TOKEN
 ENV API_TOKEN=${API_TOKEN}

@@ -1,0 +1,22 @@
+FROM iwatkot/blender:latest
+
+# Install core dependencies for maps4fsapi
+# These dependencies are stable and don't change often, so we install them in the base image
+RUN pip install --no-cache-dir \
+    opencv-python \
+    rasterio \
+    geopy \
+    "trimesh<=4.8.2" \
+    pydantic \
+    owslib \
+    tqdm \
+    scipy \
+    manifold3d \
+    fast-simplification \
+    open3d
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Verification
+RUN echo "Maps4FS API base image ready with core dependencies!"
