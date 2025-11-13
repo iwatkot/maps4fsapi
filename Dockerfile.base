@@ -13,7 +13,14 @@ RUN pip install --no-cache-dir \
     scipy \
     manifold3d \
     fast-simplification \
-    open3d
+    open3d \
+    uvicorn \
+    fastapi \
+    cachetools \
+    slowapi \
+    python-dotenv \
+    requests \
+    docker
 
 # Set working directory
 WORKDIR /usr/src/app

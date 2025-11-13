@@ -34,7 +34,7 @@ jobs:
 
     - name: Test base image
       run: |
-        docker run --rm iwatkot/maps4fsapibase:${{ inputs.tag_version }} python -c "import cv2, rasterio, geopy, trimesh, pydantic, owslib, tqdm, scipy, manifold3d, open3d; print('All dependencies imported successfully!')"
+        docker run --rm iwatkot/maps4fsapibase:${{ inputs.tag_version }} python -c "import cv2, rasterio, geopy, trimesh, pydantic, owslib, tqdm, scipy, manifold3d, open3d, uvicorn, fastapi, cachetools, slowapi, dotenv, requests, docker; print('All dependencies imported successfully!')"
 
     - name: Summary
       run: |
@@ -55,6 +55,13 @@ jobs:
         echo "- manifold3d" >> $GITHUB_STEP_SUMMARY
         echo "- fast-simplification" >> $GITHUB_STEP_SUMMARY
         echo "- open3d" >> $GITHUB_STEP_SUMMARY
+        echo "- uvicorn" >> $GITHUB_STEP_SUMMARY
+        echo "- fastapi" >> $GITHUB_STEP_SUMMARY
+        echo "- cachetools" >> $GITHUB_STEP_SUMMARY
+        echo "- slowapi" >> $GITHUB_STEP_SUMMARY
+        echo "- python-dotenv" >> $GITHUB_STEP_SUMMARY
+        echo "- requests" >> $GITHUB_STEP_SUMMARY
+        echo "- docker" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🚀 Next Steps:" >> $GITHUB_STEP_SUMMARY
         echo "- Main maps4fsapi builds will now use this base image" >> $GITHUB_STEP_SUMMARY
