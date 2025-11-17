@@ -1,0 +1,94 @@
+# Stage 1: Build environment with Nuitka compilation
+FROM iwatkot/maps4fsapibase:latest AS builder
+
+ARG API_TOKEN
+ENV API_TOKEN=${API_TOKEN}
+ARG STATS_HOST
+ENV STATS_HOST=${STATS_HOST}
+
+# Install Nuitka and C compiler dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    ccache \
+    patchelf \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Nuitka
+RUN pip install --no-cache-dir nuitka ordered-set zstandard
+
+# Clone external repos and copy data/docs (same as original)
+RUN git clone --depth 1 https://github.com/iwatkot/maps4fs.git /tmp/maps4fs \
+    && cp -r /tmp/maps4fs/docs /usr/src/app/docs \
+    && rm -rf /tmp/maps4fs
+
+RUN git clone --depth 1 https://github.com/iwatkot/maps4fsdata.git /tmp/maps4fsdata \
+    && cd /tmp/maps4fsdata \
+    && chmod +x prepare_data.sh \
+    && ./prepare_data.sh \
+    && cp -r data /usr/src/app/templates \
+    && rm -rf /tmp/maps4fsdata
+
+# Copy requirements and install dependencies
+COPY requirements.txt /usr/src/app/requirements.txt
+
+# Install osmnx from fork
+RUN pip install git+https://github.com/iwatkot/osmnx.git
+RUN pip install -r requirements.txt
+
+# Copy source code
+COPY maps4fsapi/ /usr/src/app/maps4fsapi/
+COPY pyproject.toml /usr/src/app/pyproject.toml
+
+# Install the package (needed for imports to resolve during compilation)
+RUN pip install .
+
+# Compile the application with Nuitka
+# This creates a standalone executable that includes all Python dependencies
+WORKDIR /usr/src/app
+RUN python -m nuitka \
+    --standalone \
+    --onefile \
+    --follow-imports \
+    --include-package=maps4fsapi \
+    --include-package=maps4fs \
+    --include-package=fastapi \
+    --include-package=uvicorn \
+    --include-package=pydantic \
+    --include-package=slowapi \
+    --include-package=cachetools \
+    --enable-plugin=pylint-warnings \
+    --assume-yes-for-downloads \
+    --output-dir=/build \
+    --output-filename=maps4fsapi \
+    -o maps4fsapi.bin \
+    maps4fsapi/main.py
+
+# Stage 2: Minimal runtime image
+FROM debian:bullseye-slim
+
+# Install only runtime dependencies (no Python, no pip, minimal libs)
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy only the compiled binary from builder
+COPY --from=builder /build/maps4fsapi.bin /app/maps4fsapi
+
+# Copy data files (templates, docs) - these are unavoidably readable
+COPY --from=builder /usr/src/app/templates /app/templates
+COPY --from=builder /usr/src/app/docs /app/docs
+
+# Make binary executable
+RUN chmod +x /app/maps4fsapi
+
+EXPOSE 8000
+
+# Run the compiled binary with uvicorn arguments
+# Note: The binary contains the entire application including uvicorn
+CMD ["/app/maps4fsapi"]
