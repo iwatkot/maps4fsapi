@@ -1,6 +1,5 @@
 """Main entry point for the Maps4FS API application."""
 
-import asyncio
 import logging
 import time
 from typing import Callable
@@ -22,7 +21,6 @@ from maps4fsapi.components.texture import texture_router
 from maps4fsapi.components.users import users_router
 from maps4fsapi.config import (
     PUBLIC_QUEUE_LIMIT,
-    apply_queue,
     is_heavy_endpoint,
     is_public,
     logger,
@@ -74,11 +72,6 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
             pass
 
     origin = request.headers.get("origin", "not_specified")
-    if is_heavy:
-        if not apply_queue(origin):
-            await asyncio.sleep(30)
-
-            return Response(content="", headers={"Connection": "close"})
 
     response = await call_next(request)
 

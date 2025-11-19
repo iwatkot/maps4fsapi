@@ -520,6 +520,7 @@ def task_generation(
             custom_template_path=custom_template_path,
             buildings_custom_schema=buildings_custom_schema,
             origin=kwargs.get("origin", None),
+            platform="docker",
         )
 
         if is_public:

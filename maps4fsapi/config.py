@@ -1,9 +1,7 @@
 """Configuration module for the Maps4FS API."""
 
 import os
-import re
 import subprocess
-from ipaddress import AddressValueError, IPv4Address
 from time import time
 from typing import Any
 
@@ -202,37 +200,6 @@ def version_status(package_name: str) -> dict[str, bool | str]:
         "latest_version": latest_version,
         "is_latest": is_latest_version(package_name),
     }
-
-
-def apply_queue(origin: str) -> bool:
-    """Apply queueing based on the origin.
-
-    Arguments:
-        origin (str): The origin header value.
-
-    Returns:
-        bool: True if queueing is not required, False otherwise.
-    """
-    if not origin or origin == "not_specified":
-        return False
-
-    hostname = re.sub(r"^https?://", "", origin)
-    hostname = hostname.split(":")[0]
-
-    if hostname.lower() in ["localhost", "127.0.0.1", "::1"]:
-        return True
-
-    if hostname.lower() in ["maps4fs.xyz", "www.maps4fs.xyz", "info.maps4fs.xyz"]:
-        return True
-
-    try:
-        ip = IPv4Address(hostname)
-        if ip.is_private or ip.is_loopback:
-            return True
-    except AddressValueError:
-        pass
-
-    return False
 
 
 def is_heavy_endpoint(path: str) -> bool:
