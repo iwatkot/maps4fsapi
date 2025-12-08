@@ -416,14 +416,14 @@ def task_generation(
                 raise ValueError(
                     "Specified DTM Provider requires additional settings, but none were provided."
                 )
-            
+
             # SECURITY: Sanitize DTM settings to prevent injection
             try:
                 sanitize_dict_values(payload.dtm_settings)
             except SecurityValidationError as e:
                 logger.error("Security validation failed for DTM provider settings: %s", e)
                 raise ValueError(f"Invalid DTM provider settings: {e}")
-            
+
             logger.debug("Validating DTM provider settings: %s", payload.dtm_settings)
             try:
                 dtm_provider_settings = dtm_provider.settings()(**payload.dtm_settings)
@@ -468,12 +468,14 @@ def task_generation(
             # SECURITY: Validate and sanitize user-provided path
             try:
                 validate_filename(payload.custom_osm_path)
-                expected_osm_path = safe_path_join(mfscfg.MFS_OSM_DEFAULTS_DIR, payload.custom_osm_path)
+                expected_osm_path = safe_path_join(
+                    mfscfg.MFS_OSM_DEFAULTS_DIR, payload.custom_osm_path
+                )
                 validate_path_exists(expected_osm_path, must_be_file=True)
             except SecurityValidationError as e:
                 logger.error("Security validation failed for custom OSM path: %s", e)
                 raise ValueError(f"Invalid custom OSM path: {e}")
-            
+
             logger.info("Using custom OSM file from path: %s", expected_osm_path)
             custom_osm = expected_osm_path
 
@@ -482,12 +484,14 @@ def task_generation(
             # SECURITY: Validate and sanitize user-provided path
             try:
                 validate_filename(payload.custom_dem_path)
-                expected_dem_path = safe_path_join(mfscfg.MFS_DEM_DEFAULTS_DIR, payload.custom_dem_path)
+                expected_dem_path = safe_path_join(
+                    mfscfg.MFS_DEM_DEFAULTS_DIR, payload.custom_dem_path
+                )
                 validate_path_exists(expected_dem_path, must_be_file=True)
             except SecurityValidationError as e:
                 logger.error("Security validation failed for custom DEM path: %s", e)
                 raise ValueError(f"Invalid custom DEM path: {e}")
-            
+
             logger.info("Using custom DEM file from path: %s", expected_dem_path)
             custom_background_path = expected_dem_path
 
@@ -522,12 +526,14 @@ def task_generation(
                     payload.game_code,
                     "map_templates",
                 )
-                full_template_path = safe_path_join(templates_base, payload.custom_map_template_path)
+                full_template_path = safe_path_join(
+                    templates_base, payload.custom_map_template_path
+                )
                 validate_path_exists(full_template_path, must_be_file=True)
             except SecurityValidationError as e:
                 logger.error("Security validation failed for custom map template path: %s", e)
                 raise ValueError(f"Invalid custom map template path: {e}")
-            
+
             logger.info("Using custom map template from path: %s", full_template_path)
             custom_template_path = full_template_path
 
@@ -655,13 +661,13 @@ def load_custom_schemas(
     except SecurityValidationError as e:
         logger.error("Security validation failed for schema filename: %s", e)
         raise ValueError(f"Invalid schema filename: {e}")
-    
+
     schema_dirs = {
         "texture": "texture_schemas",
         "tree": "tree_schemas",
         "buildings": "buildings_schemas",
     }
-    
+
     # SECURITY: Use safe path join to prevent path traversal
     try:
         schemas_base = os.path.join(mfscfg.MFS_TEMPLATES_DIR, game_code, schema_dirs[schema_type])
