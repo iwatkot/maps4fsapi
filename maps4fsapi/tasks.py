@@ -23,6 +23,13 @@ from maps4fsapi.config import (
     rounded_time_now,
 )
 from maps4fsapi.storage import Storage, StorageEntry
+from maps4fsapi.validation import (
+    SecurityValidationError,
+    safe_path_join,
+    sanitize_dict_values,
+    validate_filename,
+    validate_path_exists,
+)
 
 
 class HistoryEntry(NamedTuple):
@@ -409,6 +416,14 @@ def task_generation(
                 raise ValueError(
                     "Specified DTM Provider requires additional settings, but none were provided."
                 )
+            
+            # SECURITY: Sanitize DTM settings to prevent injection
+            try:
+                sanitize_dict_values(payload.dtm_settings)
+            except SecurityValidationError as e:
+                logger.error("Security validation failed for DTM provider settings: %s", e)
+                raise ValueError(f"Invalid DTM provider settings: {e}")
+            
             logger.debug("Validating DTM provider settings: %s", payload.dtm_settings)
             try:
                 dtm_provider_settings = dtm_provider.settings()(**payload.dtm_settings)
@@ -450,19 +465,29 @@ def task_generation(
                 logger.error("Failed to convert custom OSM XML: %s", e)
                 raise ValueError(f"Error processing custom OSM data: {e}")
         elif payload.custom_osm_path:
-            expected_osm_path = os.path.join(mfscfg.MFS_OSM_DEFAULTS_DIR, payload.custom_osm_path)
-            if not os.path.isfile(expected_osm_path):
-                logger.error("Custom OSM path does not exist: %s", expected_osm_path)
-                raise ValueError(f"Custom OSM path does not exist: {expected_osm_path}")
+            # SECURITY: Validate and sanitize user-provided path
+            try:
+                validate_filename(payload.custom_osm_path)
+                expected_osm_path = safe_path_join(mfscfg.MFS_OSM_DEFAULTS_DIR, payload.custom_osm_path)
+                validate_path_exists(expected_osm_path, must_be_file=True)
+            except SecurityValidationError as e:
+                logger.error("Security validation failed for custom OSM path: %s", e)
+                raise ValueError(f"Invalid custom OSM path: {e}")
+            
             logger.info("Using custom OSM file from path: %s", expected_osm_path)
             custom_osm = expected_osm_path
 
         custom_background_path = None
         if payload.custom_dem_path:
-            expected_dem_path = os.path.join(mfscfg.MFS_DEM_DEFAULTS_DIR, payload.custom_dem_path)
-            if not os.path.isfile(expected_dem_path):
-                logger.error("Custom DEM path does not exist: %s", expected_dem_path)
-                raise ValueError(f"Custom DEM path does not exist: {expected_dem_path}")
+            # SECURITY: Validate and sanitize user-provided path
+            try:
+                validate_filename(payload.custom_dem_path)
+                expected_dem_path = safe_path_join(mfscfg.MFS_DEM_DEFAULTS_DIR, payload.custom_dem_path)
+                validate_path_exists(expected_dem_path, must_be_file=True)
+            except SecurityValidationError as e:
+                logger.error("Security validation failed for custom DEM path: %s", e)
+                raise ValueError(f"Invalid custom DEM path: {e}")
+            
             logger.info("Using custom DEM file from path: %s", expected_dem_path)
             custom_background_path = expected_dem_path
 
@@ -489,17 +514,21 @@ def task_generation(
 
         custom_template_path = None
         if payload.custom_map_template_path:
-            full_template_path = os.path.join(
-                mfscfg.MFS_TEMPLATES_DIR,
-                payload.game_code,
-                "map_templates",
-                payload.custom_map_template_path,
-            )
+            # SECURITY: Validate and sanitize user-provided path
+            try:
+                validate_filename(payload.custom_map_template_path)
+                templates_base = os.path.join(
+                    mfscfg.MFS_TEMPLATES_DIR,
+                    payload.game_code,
+                    "map_templates",
+                )
+                full_template_path = safe_path_join(templates_base, payload.custom_map_template_path)
+                validate_path_exists(full_template_path, must_be_file=True)
+            except SecurityValidationError as e:
+                logger.error("Security validation failed for custom map template path: %s", e)
+                raise ValueError(f"Invalid custom map template path: {e}")
+            
             logger.info("Using custom map template from path: %s", full_template_path)
-            if not os.path.isfile(full_template_path):
-                logger.error("Custom map template path does not exist: %s", full_template_path)
-                raise ValueError(f"Custom map template path does not exist: {full_template_path}")
-
             custom_template_path = full_template_path
 
         mp = mfs.Map(
@@ -620,17 +649,27 @@ def load_custom_schemas(
     Returns:
         list[dict[str, Any]]: The loaded schema data.
     """
+    # SECURITY: Validate filename before using it
+    try:
+        validate_filename(file_name)
+    except SecurityValidationError as e:
+        logger.error("Security validation failed for schema filename: %s", e)
+        raise ValueError(f"Invalid schema filename: {e}")
+    
     schema_dirs = {
         "texture": "texture_schemas",
         "tree": "tree_schemas",
         "buildings": "buildings_schemas",
     }
-    file_path = os.path.join(
-        mfscfg.MFS_TEMPLATES_DIR, game_code, schema_dirs[schema_type], file_name
-    )
-    if not os.path.isfile(file_path):
-        logger.error("Custom %s schema file does not exist: %s", schema_type, file_path)
-        raise ValueError(f"Custom {schema_type} schema file does not exist: {file_path}")
+    
+    # SECURITY: Use safe path join to prevent path traversal
+    try:
+        schemas_base = os.path.join(mfscfg.MFS_TEMPLATES_DIR, game_code, schema_dirs[schema_type])
+        file_path = safe_path_join(schemas_base, file_name)
+        validate_path_exists(file_path, must_be_file=True)
+    except SecurityValidationError as e:
+        logger.error("Security validation failed for schema path: %s", e)
+        raise ValueError(f"Invalid schema path: {e}")
 
     try:
         with open(file_path, "r", encoding="utf-8") as f:

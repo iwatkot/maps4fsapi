@@ -28,12 +28,20 @@ from maps4fsapi.config import (
     package_version,
     version_status,
 )
+from maps4fsapi.security_middleware import security_middleware
 from maps4fsapi.tasks import TasksQueue
 
 # Configure logging to suppress INFO level access logs
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 app = FastAPI()
+
+
+# Add security middleware FIRST (before any other middleware)
+@app.middleware("http")
+async def security_check(request: Request, call_next: Callable) -> Response:
+    """Security middleware to protect against attacks."""
+    return await security_middleware(request, call_next)
 
 
 @app.middleware("http")
