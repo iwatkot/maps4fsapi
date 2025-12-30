@@ -1,6 +1,8 @@
 <div align="center" markdown>
 
 [![Maps4FS](https://img.shields.io/badge/maps4fs-gray?style=for-the-badge)](https://github.com/iwatkot/maps4fs)
+[![Maps4FS](https://img.shields.io/badge/atlasfs-green?style=for-the-badge)](https://github.com/iwatkot/atlasfs)
+[![Maps4FS](https://img.shields.io/badge/maps4fs-windows-purple?style=for-the-badge)](https://github.com/iwatkot/maps4fswindows)
 [![PYDTMDL](https://img.shields.io/badge/pydtmdl-blue?style=for-the-badge)](https://github.com/iwatkot/pydtmdl)
 [![PYGDMDL](https://img.shields.io/badge/pygmdl-teal?style=for-the-badge)](https://github.com/iwatkot/pygmdl)  
 [![Maps4FS API](https://img.shields.io/badge/maps4fs-api-green?style=for-the-badge)](https://github.com/iwatkot/maps4fsapi)
