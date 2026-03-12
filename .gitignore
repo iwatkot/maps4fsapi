@@ -26,3 +26,6 @@ tasks/
 mfsrootdir/
 templates/
 defaults/
+executables/
+locale/
+MAPS4FS_3_0_USAGE_AUDIT.md

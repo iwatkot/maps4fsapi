@@ -1,8 +1,8 @@
 """Server management for the API."""
 
 import docker
-import maps4fs.generator.config as mfscfg
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+from maps4fs.generator.bootstrap import Bootstrap
 
 from maps4fsapi.config import USERPROFILE, is_public, logger
 from maps4fsapi.limits import dependencies
@@ -62,7 +62,7 @@ def reload_templates():
         )
 
     try:
-        mfscfg.reload_templates()
+        Bootstrap.reload_templates()
         logger.info("Templates reloaded successfully.")
         return {"success": True}
     except Exception as e:
@@ -88,7 +88,7 @@ def clean_cache():
         raise HTTPException(status_code=403, detail="Cleaning cache not allowed on public server.")
 
     try:
-        mfscfg.clean_cache()
+        Bootstrap.clean_cache()
         logger.info("Cache cleaned successfully.")
         return {"success": True}
     except Exception as e:

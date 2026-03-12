@@ -1,6 +1,6 @@
 uvicorn
 fastapi
-maps4fs
+maps4fs>=3.0.0
 cachetools
 pylint
 mypy

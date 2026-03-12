@@ -4,8 +4,8 @@ import json
 import os
 from typing import Literal
 
-import maps4fs.generator.config as mfscfg
 from fastapi import APIRouter, HTTPException
+from maps4fs.generator.constants import Paths
 
 from maps4fsapi.components.models import SchemaPayload
 from maps4fsapi.limits import dependencies
@@ -35,20 +35,20 @@ def get_schema(payload: SchemaPayload):
 
 
 def get_schema_path(
-    game_code: Literal["fs22", "fs25"], schema: Literal["texture", "tree", "grle"]
+    game_code: Literal["fs25", "FS25"], schema: Literal["texture", "tree", "grle"]
 ) -> str | None:
     """Get the path to the schema file based on game code and schema type.
 
     Arguments:
-        game_code (Literal["fs22", "fs25"]): The game code, either "fs22" or "fs25".
+        game_code (Literal["fs25", "FS25"]): The game code.
         schema (Literal["texture", "tree", "grle"]): The schema type, either "texture", "tree", or "grle".
 
     Returns:
         str | None: The path to the schema file if it exists, otherwise None.
     """
-    # Example: fs25-tree-schema.json, fs22-texture-schema.json.
-    schema_file_name = f"{game_code}-{schema}-schema.json"
-    schema_path = os.path.join(mfscfg.MFS_TEMPLATES_DIR, schema_file_name)
+    normalized_game_code = game_code.lower()
+    schema_file_name = f"{normalized_game_code}-{schema}-schema.json"
+    schema_path = os.path.join(Paths.TEMPLATES_DIR, schema_file_name)
 
     if not os.path.isfile(schema_path):
         return None

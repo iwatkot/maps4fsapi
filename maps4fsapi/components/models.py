@@ -34,7 +34,7 @@ class TaskIdPayload(BaseModel):
 class GameCodePayload(BaseModel):
     """Payload model for game code."""
 
-    game_code: Literal["fs22", "fs25"]
+    game_code: Literal["fs25", "FS25"]
 
 
 class SchemaPayload(GameCodePayload):
