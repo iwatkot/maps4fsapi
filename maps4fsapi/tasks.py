@@ -10,7 +10,7 @@ from time import perf_counter
 from typing import Any, Callable, Literal, NamedTuple
 
 import maps4fs as mfs
-import maps4fs.generator.config as mfscfg
+from maps4fs.generator.constants import Paths
 
 from maps4fsapi.components.models import MainSettingsPayload
 from maps4fsapi.config import (
@@ -335,7 +335,7 @@ def get_session_name(coordinates: tuple[float, float], game_code: str) -> str:
     Returns:
         str: The generated session name.
     """
-    return mfs.Map.suggest_directory_name(coordinates, game_code)
+    return mfs.Map.suggest_directory_name(coordinates, game_code.upper())
 
 
 def get_session_name_from_payload(payload: MainSettingsPayload) -> str:
@@ -400,7 +400,8 @@ def task_generation(
 
         if not isinstance(payload, MainSettingsPayload):
             raise TypeError("Payload must be an instance of MainSettingsPayload")
-        game = mfs.Game.from_code(payload.game_code)
+        game_code = payload.game_code.lower()
+        game = mfs.Game.from_code(game_code.upper())
         if components:
             logger.debug("Setting components for the game: %s", components)
             game.set_components_by_names(components)
@@ -433,7 +434,7 @@ def task_generation(
                 raise
 
         coordinates = (payload.lat, payload.lon)
-        task_directory = os.path.join(mfscfg.MFS_DATA_DIR, session_name)
+        task_directory = os.path.join(Paths.DATA_DIR, session_name)
         os.makedirs(task_directory, exist_ok=True)
 
         prepared_settings = {
@@ -468,9 +469,7 @@ def task_generation(
             # SECURITY: Validate and sanitize user-provided path
             try:
                 validate_filename(payload.custom_osm_path)
-                expected_osm_path = safe_path_join(
-                    mfscfg.MFS_OSM_DEFAULTS_DIR, payload.custom_osm_path
-                )
+                expected_osm_path = safe_path_join(Paths.OSM_DEFAULTS_DIR, payload.custom_osm_path)
                 validate_path_exists(expected_osm_path, must_be_file=True)
             except SecurityValidationError as e:
                 logger.error("Security validation failed for custom OSM path: %s", e)
@@ -484,9 +483,7 @@ def task_generation(
             # SECURITY: Validate and sanitize user-provided path
             try:
                 validate_filename(payload.custom_dem_path)
-                expected_dem_path = safe_path_join(
-                    mfscfg.MFS_DEM_DEFAULTS_DIR, payload.custom_dem_path
-                )
+                expected_dem_path = safe_path_join(Paths.DEM_DEFAULTS_DIR, payload.custom_dem_path)
                 validate_path_exists(expected_dem_path, must_be_file=True)
             except SecurityValidationError as e:
                 logger.error("Security validation failed for custom DEM path: %s", e)
@@ -500,17 +497,17 @@ def task_generation(
         buildings_custom_schema = None
         if payload.custom_texture_schema_path:
             texture_custom_schema = load_custom_schemas(
-                payload.game_code, "texture", payload.custom_texture_schema_path
+                game_code, "texture", payload.custom_texture_schema_path
             )
             logger.info("Loaded custom texture schema from: %s", payload.custom_texture_schema_path)
         if payload.custom_tree_schema_path:
             tree_custom_schema = load_custom_schemas(
-                payload.game_code, "tree", payload.custom_tree_schema_path
+                game_code, "tree", payload.custom_tree_schema_path
             )
             logger.info("Loaded custom tree schema from: %s", payload.custom_tree_schema_path)
         if payload.custom_buildings_schema_path:
             buildings_custom_schema = load_custom_schemas(
-                payload.game_code, "buildings", payload.custom_buildings_schema_path
+                game_code, "buildings", payload.custom_buildings_schema_path
             )
             logger.info(
                 "Loaded custom buildings schema from: %s", payload.custom_buildings_schema_path
@@ -522,8 +519,8 @@ def task_generation(
             try:
                 validate_filename(payload.custom_map_template_path)
                 templates_base = os.path.join(
-                    mfscfg.MFS_TEMPLATES_DIR,
-                    payload.game_code,
+                    Paths.TEMPLATES_DIR,
+                    game_code,
                     "map_templates",
                 )
                 full_template_path = safe_path_join(
@@ -607,7 +604,7 @@ def task_generation(
                     outputs.extend(list(active_component.assets.values()))
         else:
             logger.debug("Working with a mode including all components.")
-            archive_path = os.path.join(mfscfg.MFS_DATA_DIR, f"{session_name}.zip")
+            archive_path = os.path.join(Paths.DATA_DIR, f"{session_name}.zip")
             mp.pack(archive_path.replace(".zip", ""), remove_source=False)
             outputs.append(archive_path)
 
@@ -670,7 +667,7 @@ def load_custom_schemas(
 
     # SECURITY: Use safe path join to prevent path traversal
     try:
-        schemas_base = os.path.join(mfscfg.MFS_TEMPLATES_DIR, game_code, schema_dirs[schema_type])
+        schemas_base = os.path.join(Paths.TEMPLATES_DIR, game_code, schema_dirs[schema_type])
         file_path = safe_path_join(schemas_base, file_name)
         validate_path_exists(file_path, must_be_file=True)
     except SecurityValidationError as e:

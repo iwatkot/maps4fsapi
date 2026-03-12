@@ -6,9 +6,9 @@ from time import time
 from typing import Any
 
 import maps4fs as mfs
-import maps4fs.generator.config as mfscfg
 import requests
 from dotenv import load_dotenv
+from maps4fs.generator.constants import Paths
 from packaging import version
 
 logger = mfs.Logger(level="INFO")
@@ -21,7 +21,7 @@ logger.info("Maps4FS API started at epoch time: %d", STARTED_AT)
 PUBLIC_MAX_MAP_SIZE = 8192
 # endregion
 
-MFS_CUSTOM_OSM_DIR = os.path.join(mfscfg.MFS_ROOT_DIR, "custom_osm")
+MFS_CUSTOM_OSM_DIR = os.path.join(Paths.ROOT_DIR, "custom_osm")
 os.makedirs(MFS_CUSTOM_OSM_DIR, exist_ok=True)
 
 local_env = os.path.join(os.getcwd(), "local.env")

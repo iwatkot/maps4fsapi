@@ -2,9 +2,9 @@
 
 import os
 
-import maps4fs.generator.config as mfscfg
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
+from maps4fs.generator.constants import Paths
 
 from maps4fsapi.components.models import MapGenerationPayload
 from maps4fsapi.config import PUBLIC_QUEUE_LIMIT, is_public
@@ -78,10 +78,10 @@ def download_map(task_id: str) -> FileResponse:
         raise HTTPException(status_code=400, detail="Invalid task ID format.")
 
     archive_name = f"{task_id}.zip"
-    archive_file_path = os.path.join(mfscfg.MFS_DATA_DIR, archive_name)
+    archive_file_path = os.path.join(Paths.DATA_DIR, archive_name)
 
     # Resolve absolute paths and ensure the file is within the allowed directory
-    data_dir_abs = os.path.abspath(mfscfg.MFS_DATA_DIR)
+    data_dir_abs = os.path.abspath(Paths.DATA_DIR)
     archive_file_abs = os.path.abspath(archive_file_path)
 
     # Check if the resolved path is within the data directory
